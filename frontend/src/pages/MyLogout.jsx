@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MyPageLayout from "./MyPageLayout";
 import "./MyOrders.css";
+import { readApiResponse } from "../utils/apiResponse.js";
 
 function MyLogout() {
   const [status, setStatus] = useState(null);
@@ -16,7 +17,7 @@ function MyLogout() {
         method: "POST",
         credentials: "include",
       });
-      const data = await res.json();
+      const data = await readApiResponse(res);
       if (!res.ok) {
         throw new Error(data.message || "로그아웃에 실패했습니다.");
       }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "../App.css";
+import { readApiResponse } from "../utils/apiResponse.js";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -18,7 +19,7 @@ function Login() {
         credentials: "include",
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
+      const data = await readApiResponse(res);
       if (!res.ok) throw new Error(data.message || "로그인에 실패했습니다.");
       setStatus({
         type: "success",

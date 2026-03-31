@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import logoImg from "../assets/AllbirdsLogo.jpg";
+import { readApiResponse } from "../utils/apiResponse.js";
 
 const HeaderWrap = styled.header`
   position: sticky;
@@ -252,7 +253,7 @@ export default function Header() {
           setMe(null);
           return;
         }
-        const data = await res.json();
+        const data = await readApiResponse(res);
         if (active) {
           setMe(data.user || null);
         }
