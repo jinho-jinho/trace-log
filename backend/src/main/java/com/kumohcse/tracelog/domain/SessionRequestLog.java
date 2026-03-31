@@ -41,9 +41,6 @@ public class SessionRequestLog extends BaseCreatedEntity {
     @Column(name = "request_time", nullable = false)
     private LocalDateTime requestTime;
 
-    @Column(nullable = false, length = 45)
-    private String ip;
-
     @Column(nullable = false, length = 10)
     private String method;
 
@@ -58,9 +55,6 @@ public class SessionRequestLog extends BaseCreatedEntity {
 
     @Column(columnDefinition = "TEXT")
     private String referer;
-
-    @Column(name = "user_agent", columnDefinition = "TEXT")
-    private String userAgent;
 
     @Column(length = 20)
     private String source;

@@ -188,7 +188,6 @@ CREATE TABLE session_request_logs (
                                           REFERENCES sessions(id) ON DELETE CASCADE,
                                       sequence_no INTEGER NOT NULL,
                                       request_time TIMESTAMP NOT NULL,
-                                      ip VARCHAR(45) NOT NULL,
                                       method VARCHAR(10) NOT NULL,
                                       uri TEXT NOT NULL,
                                       status_code INTEGER,
@@ -196,7 +195,6 @@ CREATE TABLE session_request_logs (
                                           response_bytes IS NULL OR response_bytes >= 0
                                       ),
                                       referer TEXT,
-                                      user_agent TEXT,
                                       source VARCHAR(20),
                                       label VARCHAR(50),
                                       endpoint TEXT,
