@@ -26,7 +26,7 @@ public class DetectionSetting {
     @Column(name = "setting_id")
     private Long id;
 
-    @Column(name = "threshold_value", nullable = false, precision = 5, scale = 4)
+    @Column(name = "threshold_value", nullable = false, precision = 8, scale = 6)
     private BigDecimal thresholdValue;
 
     @Column(name = "min_request_count", nullable = false)

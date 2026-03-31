@@ -41,6 +41,9 @@ public class SessionRequestLog extends BaseCreatedEntity {
     @Column(name = "request_time", nullable = false)
     private LocalDateTime requestTime;
 
+    @Column(nullable = false, length = 45)
+    private String ip;
+
     @Column(nullable = false, length = 10)
     private String method;
 
@@ -52,6 +55,48 @@ public class SessionRequestLog extends BaseCreatedEntity {
 
     @Column(name = "response_bytes")
     private Long responseBytes;
+
+    @Column(columnDefinition = "TEXT")
+    private String referer;
+
+    @Column(name = "user_agent", columnDefinition = "TEXT")
+    private String userAgent;
+
+    @Column(length = 20)
+    private String source;
+
+    @Column(length = 50)
+    private String label;
+
+    @Column(columnDefinition = "TEXT")
+    private String endpoint;
+
+    @Column(name = "query_string", columnDefinition = "TEXT")
+    private String queryString;
+
+    @Column(name = "uri_length")
+    private Integer uriLength;
+
+    @Column(name = "query_length")
+    private Integer queryLength;
+
+    @Column(name = "special_char_count")
+    private Integer specialCharCount;
+
+    @Column(name = "special_char_ratio", precision = 10, scale = 6)
+    private java.math.BigDecimal specialCharRatio;
+
+    @Column(name = "suspicious_keyword_count")
+    private Integer suspiciousKeywordCount;
+
+    @Column(name = "is_login_endpoint")
+    private Boolean isLoginEndpoint;
+
+    @Column(name = "is_admin_endpoint")
+    private Boolean isAdminEndpoint;
+
+    @Column(name = "is_login_attempt")
+    private Boolean isLoginAttempt;
 
     @Column(name = "raw_log", columnDefinition = "TEXT")
     private String rawLog;

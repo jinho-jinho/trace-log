@@ -33,7 +33,7 @@ public class Session extends BaseCreatedEntity {
     @Column(nullable = false, length = 45)
     private String ip;
 
-    @Column(name = "user_agent", columnDefinition = "TEXT")
+    @Column(name = "user_agent", nullable = false, columnDefinition = "TEXT")
     private String userAgent;
 
     @Column(name = "session_start", nullable = false)
@@ -42,13 +42,13 @@ public class Session extends BaseCreatedEntity {
     @Column(name = "session_end", nullable = false)
     private LocalDateTime sessionEnd;
 
-    @Column(name = "duration_sec", nullable = false)
-    private Integer durationSec;
+    @Column(name = "duration_sec", nullable = false, precision = 12, scale = 3)
+    private BigDecimal durationSec;
 
     @Column(name = "request_count", nullable = false)
     private Integer requestCount;
 
-    @Column(name = "anomaly_score", precision = 5, scale = 4)
+    @Column(name = "anomaly_score", precision = 8, scale = 6)
     private BigDecimal anomalyScore;
 
     @Column(name = "analyzed_at")

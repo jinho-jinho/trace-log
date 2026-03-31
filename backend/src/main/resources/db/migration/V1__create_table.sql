@@ -166,13 +166,15 @@ CREATE INDEX idx_reviews_user_id ON reviews(user_id);
 CREATE TABLE sessions (
                           id BIGSERIAL PRIMARY KEY,
                           ip VARCHAR(45) NOT NULL,
-                          user_agent TEXT,
+                          user_agent TEXT NOT NULL,
                           session_start TIMESTAMP NOT NULL,
                           session_end TIMESTAMP NOT NULL,
-                          duration_sec INTEGER NOT NULL CHECK (duration_sec >= 0),
+                          duration_sec NUMERIC(12,3) NOT NULL CHECK (duration_sec >= 0),
                           request_count INTEGER NOT NULL CHECK (request_count >= 0),
 
-                          anomaly_score NUMERIC(5,4) CHECK (anomaly_score IS NULL OR (anomaly_score >= 0 AND anomaly_score <= 1)),
+                          anomaly_score NUMERIC(8,6) CHECK (
+                              anomaly_score IS NULL OR anomaly_score >= 0
+                          ),
                           analyzed_at TIMESTAMP,
 
                           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -186,10 +188,33 @@ CREATE TABLE session_request_logs (
                                           REFERENCES sessions(id) ON DELETE CASCADE,
                                       sequence_no INTEGER NOT NULL,
                                       request_time TIMESTAMP NOT NULL,
+                                      ip VARCHAR(45) NOT NULL,
                                       method VARCHAR(10) NOT NULL,
                                       uri TEXT NOT NULL,
                                       status_code INTEGER,
-                                      response_bytes BIGINT,
+                                      response_bytes BIGINT CHECK (
+                                          response_bytes IS NULL OR response_bytes >= 0
+                                      ),
+                                      referer TEXT,
+                                      user_agent TEXT,
+                                      source VARCHAR(20),
+                                      label VARCHAR(50),
+                                      endpoint TEXT,
+                                      query_string TEXT,
+                                      uri_length INTEGER CHECK (uri_length IS NULL OR uri_length >= 0),
+                                      query_length INTEGER CHECK (query_length IS NULL OR query_length >= 0),
+                                      special_char_count INTEGER CHECK (
+                                          special_char_count IS NULL OR special_char_count >= 0
+                                      ),
+                                      special_char_ratio NUMERIC(10,6) CHECK (
+                                          special_char_ratio IS NULL OR special_char_ratio >= 0
+                                      ),
+                                      suspicious_keyword_count INTEGER CHECK (
+                                          suspicious_keyword_count IS NULL OR suspicious_keyword_count >= 0
+                                      ),
+                                      is_login_endpoint BOOLEAN,
+                                      is_admin_endpoint BOOLEAN,
+                                      is_login_attempt BOOLEAN,
                                       raw_log TEXT,
                                       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                       UNIQUE(session_id, sequence_no)
@@ -202,16 +227,17 @@ CREATE TABLE session_features (
                                   unique_url_count INTEGER CHECK (unique_url_count IS NULL OR unique_url_count >= 0),
                                   unique_method_count INTEGER CHECK (unique_method_count IS NULL OR unique_method_count >= 0),
 
-                                  avg_request_interval_sec NUMERIC(10,3) CHECK (avg_request_interval_sec IS NULL OR avg_request_interval_sec >= 0),
-                                  max_request_interval_sec NUMERIC(10,3) CHECK (max_request_interval_sec IS NULL OR max_request_interval_sec >= 0),
-                                  min_request_interval_sec NUMERIC(10,3) CHECK (min_request_interval_sec IS NULL OR min_request_interval_sec >= 0),
+                                  avg_request_interval_sec NUMERIC(12,3) CHECK (avg_request_interval_sec IS NULL OR avg_request_interval_sec >= 0),
+                                  max_request_interval_sec NUMERIC(12,3) CHECK (max_request_interval_sec IS NULL OR max_request_interval_sec >= 0),
+                                  min_request_interval_sec NUMERIC(12,3) CHECK (min_request_interval_sec IS NULL OR min_request_interval_sec >= 0),
 
-                                  error_4xx_ratio NUMERIC(6,4) CHECK (error_4xx_ratio IS NULL OR (error_4xx_ratio >= 0 AND error_4xx_ratio <= 1)),
-                                  error_5xx_ratio NUMERIC(6,4) CHECK (error_5xx_ratio IS NULL OR (error_5xx_ratio >= 0 AND error_5xx_ratio <= 1)),
+                                  error_4xx_ratio NUMERIC(8,6) CHECK (error_4xx_ratio IS NULL OR (error_4xx_ratio >= 0 AND error_4xx_ratio <= 1)),
+                                  error_5xx_ratio NUMERIC(8,6) CHECK (error_5xx_ratio IS NULL OR (error_5xx_ratio >= 0 AND error_5xx_ratio <= 1)),
                                   status_200_count INTEGER CHECK (status_200_count IS NULL OR status_200_count >= 0),
 
-                                  avg_bytes NUMERIC(12,3) CHECK (avg_bytes IS NULL OR avg_bytes >= 0),
+                                  avg_bytes NUMERIC(14,3) CHECK (avg_bytes IS NULL OR avg_bytes >= 0),
                                   max_bytes BIGINT CHECK (max_bytes IS NULL OR max_bytes >= 0),
+                                  std_bytes NUMERIC(14,4) CHECK (std_bytes IS NULL OR std_bytes >= 0),
 
                                   url_sequence TEXT,
                                   status_sequence TEXT,
@@ -220,12 +246,23 @@ CREATE TABLE session_features (
                                   login_count INTEGER CHECK (login_count IS NULL OR login_count >= 0),
                                   admin_count INTEGER CHECK (admin_count IS NULL OR admin_count >= 0),
 
+                                  avg_uri_length NUMERIC(12,4) CHECK (avg_uri_length IS NULL OR avg_uri_length >= 0),
+                                  max_uri_length INTEGER CHECK (max_uri_length IS NULL OR max_uri_length >= 0),
+                                  avg_query_length NUMERIC(12,4) CHECK (avg_query_length IS NULL OR avg_query_length >= 0),
+                                  max_query_length INTEGER CHECK (max_query_length IS NULL OR max_query_length >= 0),
+                                  special_char_count_sum INTEGER CHECK (special_char_count_sum IS NULL OR special_char_count_sum >= 0),
+                                  special_char_ratio_avg NUMERIC(12,6) CHECK (special_char_ratio_avg IS NULL OR special_char_ratio_avg >= 0),
+                                  suspicious_keyword_count_sum INTEGER CHECK (
+                                      suspicious_keyword_count_sum IS NULL OR suspicious_keyword_count_sum >= 0
+                                  ),
+                                  login_attempt_count INTEGER CHECK (login_attempt_count IS NULL OR login_attempt_count >= 0),
+
                                   feature_calculated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE detection_settings (
                                     setting_id BIGSERIAL PRIMARY KEY,
-                                    threshold_value NUMERIC(5,4) NOT NULL CHECK (threshold_value >= 0 AND threshold_value <= 1),
+                                    threshold_value NUMERIC(8,6) NOT NULL CHECK (threshold_value >= 0),
                                     min_request_count INTEGER NOT NULL CHECK (min_request_count >= 0),
                                     applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -241,6 +278,9 @@ CREATE INDEX idx_sessions_session_start
 
 CREATE INDEX idx_sessions_anomaly_score_desc
     ON sessions(anomaly_score DESC);
+
+CREATE INDEX idx_session_request_logs_session_seq
+    ON session_request_logs(session_id, sequence_no);
 
 
 -- =========================================
