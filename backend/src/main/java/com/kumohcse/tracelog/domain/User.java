@@ -41,7 +41,7 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false, columnDefinition = "user_role")
     private UserRole role = UserRole.CUSTOMER;
 
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Cart cart;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)

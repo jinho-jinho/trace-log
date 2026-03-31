@@ -58,9 +58,9 @@ public class Session extends BaseCreatedEntity {
     @OneToMany(mappedBy = "session", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<SessionRequestLog> requestLogs = new LinkedHashSet<>();
 
-    @OneToOne(mappedBy = "session", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
     private SessionFeature feature;
 
-    @OneToOne(mappedBy = "session", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
     private SessionLlmSummary llmSummary;
 }
