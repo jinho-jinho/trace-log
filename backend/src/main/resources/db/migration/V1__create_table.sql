@@ -268,7 +268,25 @@ CREATE TABLE detection_settings (
 CREATE TABLE session_llm_summaries (
                                        session_id BIGINT PRIMARY KEY
                                            REFERENCES sessions(id) ON DELETE CASCADE,
-                                       summary_text TEXT NOT NULL
+                                       summary_text TEXT NOT NULL,
+                                       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE session_feature_contributions (
+                                               contribution_id BIGSERIAL PRIMARY KEY,
+                                               session_id BIGINT NOT NULL
+                                                   REFERENCES sessions(id) ON DELETE CASCADE,
+                                               feature_name VARCHAR(100) NOT NULL,
+                                               feature_value NUMERIC(20,8),
+                                               shap_value NUMERIC(20,8) NOT NULL,
+                                               abs_shap_value NUMERIC(20,8) NOT NULL,
+                                               created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                                               CONSTRAINT uq_session_feature_contributions_session_feature
+                                                   UNIQUE (session_id, feature_name),
+
+                                               CONSTRAINT chk_session_feature_contributions_abs_shap
+                                                   CHECK (abs_shap_value = ABS(shap_value))
 );
 
 CREATE INDEX idx_sessions_session_start
@@ -279,6 +297,9 @@ CREATE INDEX idx_sessions_anomaly_score_desc
 
 CREATE INDEX idx_session_request_logs_session_seq
     ON session_request_logs(session_id, sequence_no);
+
+CREATE INDEX idx_session_feature_contributions_session_abs_shap
+    ON session_feature_contributions(session_id, abs_shap_value DESC);
 
 
 -- =========================================

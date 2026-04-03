@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "session_llm_summaries")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SessionLlmSummary {
+public class SessionLlmSummary extends BaseCreatedEntity {
 
     @Id
     @Column(name = "session_id")
