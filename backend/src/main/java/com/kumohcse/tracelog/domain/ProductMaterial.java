@@ -34,4 +34,11 @@ public class ProductMaterial {
 
     @Column(name = "material_name", nullable = false, length = 100)
     private String materialName;
+
+    public static ProductMaterial create(Product product, String materialName) {
+        ProductMaterial material = new ProductMaterial();
+        material.product = product;
+        material.materialName = materialName;
+        return material;
+    }
 }

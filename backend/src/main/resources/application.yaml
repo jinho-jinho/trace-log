@@ -41,7 +41,7 @@ spring:
 app:
   storage:
     image-dir: ${IMAGE_DIR:storage/images}
-    public-url-prefix: ${IMAGE_URL_PREFIX:/media}
+    public-url-prefix: ${IMAGE_URL_PREFIX:/img}
 
 springdoc:
   api-docs:

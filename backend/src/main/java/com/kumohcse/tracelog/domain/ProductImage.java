@@ -32,4 +32,12 @@ public class ProductImage extends BaseCreatedEntity {
 
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 0;
+
+    public static ProductImage create(Product product, String imageUrl, int sortOrder) {
+        ProductImage image = new ProductImage();
+        image.product = product;
+        image.imageUrl = imageUrl;
+        image.sortOrder = sortOrder;
+        return image;
+    }
 }

@@ -44,4 +44,22 @@ public class OrderItem extends BaseCreatedEntity {
 
     @Column(nullable = false)
     private Integer quantity;
+
+    public static OrderItem create(
+        OrderEntity order,
+        Product product,
+        String nameSnapshot,
+        BigDecimal priceSnapshot,
+        Integer sizeValue,
+        Integer quantity
+    ) {
+        OrderItem item = new OrderItem();
+        item.order = order;
+        item.product = product;
+        item.nameSnapshot = nameSnapshot;
+        item.priceSnapshot = priceSnapshot;
+        item.sizeValue = sizeValue;
+        item.quantity = quantity;
+        return item;
+    }
 }

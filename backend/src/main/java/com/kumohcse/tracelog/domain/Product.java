@@ -2,6 +2,7 @@ package com.kumohcse.tracelog.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -74,4 +75,74 @@ public class Product extends BaseTimeEntity {
 
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Review> reviews = new LinkedHashSet<>();
+
+    public static Product create(
+        String name,
+        String shortDescription,
+        BigDecimal basePrice,
+        BigDecimal discountRate,
+        LocalDateTime saleStart,
+        LocalDateTime saleEnd
+    ) {
+        Product product = new Product();
+        product.name = name;
+        product.shortDescription = shortDescription;
+        product.basePrice = basePrice;
+        product.discountRate = discountRate == null ? BigDecimal.ZERO : discountRate;
+        product.saleStart = saleStart;
+        product.saleEnd = saleEnd;
+        product.totalSold = 0;
+        return product;
+    }
+
+    public void updateDiscount(BigDecimal discountRate, LocalDateTime saleStart, LocalDateTime saleEnd) {
+        if (discountRate != null) {
+            this.discountRate = discountRate;
+        }
+        this.saleStart = saleStart;
+        this.saleEnd = saleEnd;
+    }
+
+    public void replaceImages(Collection<String> imageUrls) {
+        this.images.clear();
+        int sort = 0;
+        for (String imageUrl : imageUrls) {
+            this.images.add(ProductImage.create(this, imageUrl, sort++));
+        }
+    }
+
+    public void replaceCategories(Collection<String> categoryNames) {
+        this.categories.clear();
+        for (String categoryName : categoryNames) {
+            this.categories.add(ProductCategory.create(this, categoryName));
+        }
+    }
+
+    public void replaceSizes(Collection<Integer> sizeValues) {
+        this.sizes.clear();
+        for (Integer sizeValue : sizeValues) {
+            this.sizes.add(ProductSize.create(this, sizeValue));
+        }
+    }
+
+    public void replaceMaterials(Collection<String> materialNames) {
+        this.materials.clear();
+        for (String materialName : materialNames) {
+            this.materials.add(ProductMaterial.create(this, materialName));
+        }
+    }
+
+    public BigDecimal calculateFinalPrice() {
+        BigDecimal hundred = BigDecimal.valueOf(100);
+        BigDecimal effectiveDiscount = discountRate == null ? BigDecimal.ZERO : discountRate;
+        return basePrice.multiply(hundred.subtract(effectiveDiscount)).divide(hundred, 0, java.math.RoundingMode.FLOOR);
+    }
+
+    public boolean supportsSize(Integer sizeValue) {
+        return sizes.stream().anyMatch(size -> size.getSizeValue().equals(sizeValue));
+    }
+
+    public void increaseTotalSold(int quantity) {
+        this.totalSold += quantity;
+    }
 }

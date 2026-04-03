@@ -34,4 +34,11 @@ public class ProductSize {
 
     @Column(name = "size_value", nullable = false)
     private Integer sizeValue;
+
+    public static ProductSize create(Product product, Integer sizeValue) {
+        ProductSize size = new ProductSize();
+        size.product = product;
+        size.sizeValue = sizeValue;
+        return size;
+    }
 }

@@ -4,7 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public record ProductDetailResponse(
+    @JsonProperty("_id")
     Long id,
     String name,
     String shortDescription,
