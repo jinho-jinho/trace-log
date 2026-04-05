@@ -42,4 +42,15 @@ public class Review extends BaseTimeEntity {
 
     @Column(name = "size_value")
     private Integer sizeValue;
+
+    public static Review create(User user, Product product, String title, Integer rating, String content, Integer sizeValue) {
+        Review review = new Review();
+        review.user = user;
+        review.product = product;
+        review.title = title;
+        review.rating = rating;
+        review.content = content;
+        review.sizeValue = sizeValue;
+        return review;
+    }
 }

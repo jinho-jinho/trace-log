@@ -34,4 +34,11 @@ public class ProductCategory {
 
     @Column(name = "category_name", nullable = false, length = 100)
     private String categoryName;
+
+    public static ProductCategory create(Product product, String categoryName) {
+        ProductCategory category = new ProductCategory();
+        category.product = product;
+        category.categoryName = categoryName;
+        return category;
+    }
 }

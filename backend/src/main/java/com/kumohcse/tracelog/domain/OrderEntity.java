@@ -47,4 +47,20 @@ public class OrderEntity extends BaseTimeEntity {
     @OrderBy("id ASC")
     @OneToMany(mappedBy = "order", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<OrderItem> items = new LinkedHashSet<>();
+
+    public static OrderEntity create(User user, BigDecimal totalAmount, LocalDateTime paidAt) {
+        OrderEntity order = new OrderEntity();
+        order.user = user;
+        order.totalAmount = totalAmount;
+        order.paidAt = paidAt;
+        return order;
+    }
+
+    public void addItem(Product product, String nameSnapshot, BigDecimal priceSnapshot, Integer sizeValue, Integer quantity) {
+        items.add(OrderItem.create(this, product, nameSnapshot, priceSnapshot, sizeValue, quantity));
+    }
+
+    public void updateTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
 }

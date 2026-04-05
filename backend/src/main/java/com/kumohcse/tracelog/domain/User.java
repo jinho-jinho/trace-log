@@ -49,4 +49,13 @@ public class User extends BaseTimeEntity {
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private Set<Review> reviews = new LinkedHashSet<>();
+
+    public static User create(String email, String passwordHash, String name) {
+        User user = new User();
+        user.email = email;
+        user.passwordHash = passwordHash;
+        user.name = name;
+        user.role = UserRole.CUSTOMER;
+        return user;
+    }
 }

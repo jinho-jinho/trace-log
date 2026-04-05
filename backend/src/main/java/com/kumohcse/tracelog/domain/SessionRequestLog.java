@@ -56,7 +56,6 @@ public class SessionRequestLog extends BaseCreatedEntity {
     @Column(columnDefinition = "TEXT")
     private String referer;
 
-
     @Column(length = 20)
     private String source;
 

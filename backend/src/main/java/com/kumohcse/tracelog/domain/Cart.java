@@ -35,4 +35,41 @@ public class Cart extends BaseTimeEntity {
     @OrderBy("id ASC")
     @OneToMany(mappedBy = "cart", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CartItem> items = new LinkedHashSet<>();
+
+    public static Cart create(User user) {
+        Cart cart = new Cart();
+        cart.user = user;
+        return cart;
+    }
+
+    public CartItem findItem(Long itemId) {
+        return items.stream()
+            .filter(item -> item.getId().equals(itemId))
+            .findFirst()
+            .orElse(null);
+    }
+
+    public CartItem findItem(Long productId, Integer sizeValue) {
+        return items.stream()
+            .filter(item -> item.getProduct().getId().equals(productId) && item.getSizeValue().equals(sizeValue))
+            .findFirst()
+            .orElse(null);
+    }
+
+    public void addItem(Product product, Integer sizeValue, Integer quantity) {
+        CartItem existing = findItem(product.getId(), sizeValue);
+        if (existing != null) {
+            existing.increaseQuantity(quantity);
+            return;
+        }
+        items.add(CartItem.create(this, product, sizeValue, quantity));
+    }
+
+    public void removeItem(Long itemId) {
+        items.removeIf(item -> item.getId().equals(itemId));
+    }
+
+    public void clearItems() {
+        items.clear();
+    }
 }

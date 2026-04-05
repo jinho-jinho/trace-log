@@ -63,4 +63,8 @@ public class Session extends BaseCreatedEntity {
 
     @OneToOne(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
     private SessionLlmSummary llmSummary;
+
+    @OrderBy("absShapValue DESC, id ASC")
+    @OneToMany(mappedBy = "session", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<SessionFeatureContribution> featureContributions = new LinkedHashSet<>();
 }
