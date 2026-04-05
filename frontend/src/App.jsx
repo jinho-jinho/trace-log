@@ -18,6 +18,7 @@ import MyLogout from "./pages/MyLogout";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminProductNew from "./pages/admin/AdminProductNew";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminEntry from "./pages/admin/AdminEntry";
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
           <Route path="/my/logout" element={<MyLogout />} />
 
           {/* Admin */}
+          <Route path="/admin/select" element={<AdminEntry />} />
           <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/admin/products/new" element={<AdminProductNew />} />
           <Route path="/admin" element={<AdminDashboard />} />

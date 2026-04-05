@@ -275,7 +275,7 @@ export default function Header() {
       return;
     }
     if (me.role === "admin") {
-      navigate("/admin");
+      navigate("/admin/select");
       return;
     }
     navigate("/my/profile");
