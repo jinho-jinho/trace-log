@@ -64,10 +64,7 @@ function Login() {
         type: "success",
         message: data.message || copy.loginSuccess,
       });
-
-      if (data.user?.role === "admin") {
-        navigate("/admin/select", { replace: true });
-      }
+      navigate("/", { replace: true });
     } catch (err) {
       setStatus({ type: "error", message: err.message });
     } finally {
