@@ -1,8 +1,16 @@
 BEGIN;
 
--- 일반 사용자 생성
+-- 사용자 생성
 INSERT INTO users (email, password_hash, name, role, created_at, updated_at)
 VALUES
+    (
+        'admin@test.com',
+        '$2a$10$bpWxMsl0gGo9/HzIkQ.3veddsRVb84EYTpBFLm2qJjq.uA5i2mTni',
+        'admin',
+        'admin',
+        TIMESTAMP '2026-04-02 09:00:00',
+        TIMESTAMP '2026-04-02 09:00:00'
+    ),
     (
         'user1@test.com',
         '$2a$10$bpWxMsl0gGo9/HzIkQ.3veddsRVb84EYTpBFLm2qJjq.uA5i2mTni',

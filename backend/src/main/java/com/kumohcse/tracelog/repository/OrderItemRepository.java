@@ -32,8 +32,8 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
         )
         from OrderItem oi
         join oi.order o
-        where (:start is null or o.paidAt >= :start)
-          and (:end is null or o.paidAt <= :end)
+        where o.paidAt >= coalesce(:start, o.paidAt)
+          and o.paidAt <= coalesce(:end, o.paidAt)
         group by oi.product.id, oi.nameSnapshot
         order by sum(oi.priceSnapshot * oi.quantity) desc
         """)

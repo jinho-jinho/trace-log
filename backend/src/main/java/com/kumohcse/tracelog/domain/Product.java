@@ -3,6 +3,7 @@ package com.kumohcse.tracelog.domain;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -119,9 +120,17 @@ public class Product extends BaseTimeEntity {
     }
 
     public void replaceSizes(Collection<Integer> sizeValues) {
-        this.sizes.clear();
-        for (Integer sizeValue : sizeValues) {
-            this.sizes.add(ProductSize.create(this, sizeValue));
+        Set<Integer> requestedSizes = new HashSet<>(sizeValues);
+        this.sizes.removeIf(size -> !requestedSizes.contains(size.getSizeValue()));
+
+        Set<Integer> existingSizes = this.sizes.stream()
+            .map(ProductSize::getSizeValue)
+            .collect(java.util.stream.Collectors.toSet());
+
+        for (Integer sizeValue : requestedSizes) {
+            if (!existingSizes.contains(sizeValue)) {
+                this.sizes.add(ProductSize.create(this, sizeValue));
+            }
         }
     }
 

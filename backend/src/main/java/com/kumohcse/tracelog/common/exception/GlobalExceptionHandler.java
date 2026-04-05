@@ -25,7 +25,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationException(MethodArgumentNotValidException e) {
         FieldError fieldError = e.getBindingResult().getFieldErrors().stream().findFirst().orElse(null);
-        String message = fieldError == null ? "잘못된 요청입니다." : fieldError.getDefaultMessage();
+        String message = "잘못된 요청입니다.";
+        if (fieldError != null && fieldError.getDefaultMessage() != null) {
+            message = fieldError.getDefaultMessage();
+        }
         return ResponseEntity.badRequest().body(Map.of("message", message));
     }
 
