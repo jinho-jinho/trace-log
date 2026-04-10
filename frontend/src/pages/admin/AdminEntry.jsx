@@ -4,9 +4,6 @@ import { Link, useNavigate } from "react-router-dom";
 import tracelogLogo from "../../assets/tracelog-logo.png";
 import { readApiResponse } from "../../utils/apiResponse.js";
 
-const TRACELOG_DASHBOARD_URL =
-  import.meta.env.VITE_TRACELOG_DASHBOARD_URL || "/";
-
 const cardBase = css`
   position: relative;
   overflow: hidden;
@@ -71,10 +68,6 @@ const Hero = styled.div`
   margin-bottom: 36px;
 `;
 
-const HeroCopy = styled.div`
-  max-width: none;
-`;
-
 const Eyebrow = styled.p`
   margin: 0 0 14px;
   font-size: 12px;
@@ -114,7 +107,7 @@ const Grid = styled.div`
   }
 `;
 
-const DashboardCard = styled.a`
+const DashboardCard = styled(Link)`
   ${cardBase};
   color: #f6fbf8;
   background:
@@ -343,15 +336,13 @@ export default function AdminEntry() {
       <AmbientGlow />
       <Shell>
         <Hero>
-          <HeroCopy>
-            <Eyebrow>ADMIN ENTRY</Eyebrow>
-            <Title>관리자 진입 경로를 선택하세요.</Title>
-            <Copy>원하는 관리자 화면을 선택해 바로 이동하세요.</Copy>
-          </HeroCopy>
+          <Eyebrow>ADMIN ENTRY</Eyebrow>
+          <Title>관리자 진입 경로를 선택하세요.</Title>
+          <Copy>원하는 관리자 화면을 선택해 바로 이동하세요.</Copy>
         </Hero>
 
         <Grid>
-          <DashboardCard href={TRACELOG_DASHBOARD_URL}>
+          <DashboardCard to="/tracelog-dashboard">
             <CardTop>
               <CardLabel>TRACE LOG</CardLabel>
               <LogoRow>
