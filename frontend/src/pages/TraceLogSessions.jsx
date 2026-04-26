@@ -1,181 +1,119 @@
 import { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { readApiResponse } from "../utils/apiResponse.js";
-import { anomalySessions, formatDateTime, toDateTimeLocalValue } from "./traceLogData.js";
-
-const Page = styled.section`
-  min-height: 100vh;
-  padding: 28px 32px 40px;
-  background: #f5f5f5;
-  color: #1c1c1c;
-
-  @media (max-width: 720px) {
-    padding: 18px 16px 28px;
-  }
-`;
-
-const Head = styled.div`
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 22px;
-
-  @media (max-width: 900px) {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-`;
-
-const BackLink = styled(Link)`
-  text-decoration: none;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #55706a;
-`;
-
-const Title = styled.h1`
-  margin: 10px 0 0;
-  font-size: clamp(2rem, 3vw, 3rem);
-  line-height: 1.02;
-  letter-spacing: -0.05em;
-`;
-
-const Copy = styled.p`
-  margin: 10px 0 0;
-  color: #64726f;
-  font-size: 1rem;
-`;
-
-const Panel = styled.section`
-  padding: 24px;
-  border-radius: 20px;
-  background: #fff;
-  border: 1px solid #e9e9e9;
-`;
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  formatAiAnalysis,
+  formatDateTime,
+  formatScore,
+  getTraceLogDashboard,
+  getTraceLogSessions,
+  toDateTimeLocalValue,
+  truncateText,
+  verifyAdminSession,
+  formatSummaryCards,
+} from "./traceLogApi.js";
+import {
+  BackLink,
+  DashboardPage,
+  DataTable,
+  EmptyState,
+  MainContent,
+  Panel,
+  PanelHead,
+  PanelTitle,
+  SubText,
+  TableWrap,
+  TraceLogHeader,
+} from "./TraceLogLayout.jsx";
 
 const FilterGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: 1fr 1fr minmax(180px, 0.8fr) minmax(140px, 0.6fr);
+  gap: 12px;
   align-items: end;
 
-  @media (max-width: 1100px) {
+  @media (max-width: 980px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @media (max-width: 640px) {
+  @media (max-width: 620px) {
     grid-template-columns: 1fr;
   }
 `;
 
 const Field = styled.label`
   display: grid;
-  gap: 8px;
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: #3e4a47;
+  gap: 7px;
+  color: #4f5d66;
+  font-size: 12px;
+  font-weight: 850;
 `;
 
 const Input = styled.input`
   width: 100%;
-  height: 46px;
-  padding: 0 14px;
-  border: 1px solid #d5d9d8;
-  border-radius: 12px;
-  background: #fbfbfb;
-  font-size: 0.96rem;
+  height: 40px;
+  border: 1px solid #d6dee4;
+  background: #fff;
+  padding: 0 12px;
+  color: #172026;
+  font-size: 13px;
 `;
 
 const SortRow = styled.div`
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 18px;
   flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
 `;
 
 const SortChip = styled.button`
-  height: 40px;
-  padding: 0 16px;
-  border-radius: 999px;
-  border: 1px solid ${(props) => (props.$active ? "#111" : "#d5d5d5")};
-  background: ${(props) => (props.$active ? "#111" : "#fff")};
-  color: ${(props) => (props.$active ? "#fff" : "#222")};
-  font-size: 0.94rem;
-  font-weight: 700;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid ${(props) => (props.$active ? "#172026" : "#d6dee4")};
+  background: ${(props) => (props.$active ? "#172026" : "#fff")};
+  color: ${(props) => (props.$active ? "#fff" : "#4f5d66")};
+  font-size: 12px;
+  font-weight: 850;
   cursor: pointer;
 `;
 
 const ResultMeta = styled.div`
   margin-top: 16px;
-  color: #5f6c69;
-  font-size: 0.95rem;
-`;
-
-const TableWrap = styled.div`
-  overflow-x: auto;
-  margin-top: 24px;
-`;
-
-const DataTable = styled.table`
-  width: 100%;
-  min-width: 980px;
-  border-collapse: collapse;
-
-  th,
-  td {
-    padding: 14px 14px;
-    border: 1px solid #d8d8d8;
-    text-align: left;
-    font-size: 0.96rem;
-    vertical-align: top;
-  }
-
-  th {
-    background: #f1f1f1;
-    font-size: 0.98rem;
-    font-weight: 800;
-    white-space: nowrap;
-  }
-
-  td {
-    background: #fff;
-  }
+  color: #66737d;
+  font-size: 13px;
 `;
 
 const ClickableRow = styled.tr`
   cursor: pointer;
-
-  &:hover td {
-    background: #f7faf9;
-  }
 `;
 
-const EmptyState = styled.div`
-  padding: 42px 12px 20px;
-  color: #6a7673;
-  font-size: 1rem;
-  text-align: center;
+const ClampCell = styled.span`
+  display: inline-block;
+  max-width: ${(props) => props.$maxWidth || "240px"};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const LoadingShell = styled.div`
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: #f5f5f5;
-  color: #666;
-  font-size: 1rem;
+  background: #f4f6f8;
+  color: #66737d;
+  font-size: 14px;
+  font-weight: 750;
 `;
 
 export default function TraceLogSessions() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [checking, setChecking] = useState(true);
-
-  const initialSort = searchParams.get("sort") === "score" ? "score" : "latest";
-  const [sortBy, setSortBy] = useState(initialSort);
+  const [header, setHeader] = useState(null);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [sortBy, setSortBy] = useState(searchParams.get("sort") === "score" ? "score" : "latest");
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
   const [ipQuery, setIpQuery] = useState("");
@@ -186,174 +124,165 @@ export default function TraceLogSessions() {
 
   useEffect(() => {
     let active = true;
-
-    async function verifyAdmin() {
-      try {
-        const res = await fetch("/api/auth/me", { credentials: "include" });
-        const data = await readApiResponse(res);
-
-        if (!res.ok || !data.user || data.user.role !== "admin") {
-          navigate("/login", { replace: true });
-          return;
-        }
-      } catch {
-        navigate("/login", { replace: true });
-        return;
-      } finally {
-        if (active) {
-          setChecking(false);
-        }
-      }
-    }
-
-    verifyAdmin();
-
+    verifyAdminSession(navigate)().then(() => {
+      if (active) setChecking(false);
+    });
     return () => {
       active = false;
     };
   }, [navigate]);
 
-  const filteredRows = useMemo(() => {
-    let rows = [...anomalySessions];
+  useEffect(() => {
+    if (checking) return undefined;
+    let active = true;
+    getTraceLogDashboard("24h")
+      .then((data) => {
+        if (active) setHeader(data.header);
+      })
+      .catch(() => {
+        if (active) setHeader(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [checking]);
 
-    if (startAt) {
-      rows = rows.filter((row) => new Date(row.startedAt) >= new Date(startAt));
-    }
+  useEffect(() => {
+    if (checking) return undefined;
+    let active = true;
+    setLoading(true);
+    setError("");
 
-    if (endAt) {
-      rows = rows.filter((row) => new Date(row.endedAt) <= new Date(endAt));
-    }
+    getTraceLogSessions({ startAt, endAt, ip: ipQuery, sort: sortBy })
+      .then((data) => {
+        if (active) setRows(data.sessions ?? []);
+      })
+      .catch((err) => {
+        if (active) {
+          setError(err.message || "세션 목록을 불러오지 못했습니다.");
+          setRows([]);
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
-    if (ipQuery.trim()) {
-      const normalized = ipQuery.trim().toLowerCase();
-      rows = rows.filter((row) => row.ip.toLowerCase().includes(normalized));
-    }
-
-    rows.sort((a, b) => {
-      if (sortBy === "score") {
-        return b.score - a.score || new Date(b.startedAt) - new Date(a.startedAt);
-      }
-      return new Date(b.startedAt) - new Date(a.startedAt);
-    });
-
-    return rows;
-  }, [endAt, ipQuery, sortBy, startAt]);
+    return () => {
+      active = false;
+    };
+  }, [checking, endAt, ipQuery, sortBy, startAt]);
 
   const handleSortChange = (nextSort) => {
     setSortBy(nextSort);
     setSearchParams({ sort: nextSort });
   };
 
-  const presetStart = toDateTimeLocalValue(anomalySessions[anomalySessions.length - 1].startedAt);
-  const presetEnd = toDateTimeLocalValue(anomalySessions[0].endedAt);
+  const dateBounds = useMemo(() => {
+    if (!rows.length) return { min: "", max: "" };
+    const sortedByStart = [...rows].sort((a, b) => new Date(a.sessionStart) - new Date(b.sessionStart));
+    const sortedByEnd = [...rows].sort((a, b) => new Date(a.sessionEnd) - new Date(b.sessionEnd));
+    return {
+      min: toDateTimeLocalValue(sortedByStart[0]?.sessionStart),
+      max: toDateTimeLocalValue(sortedByEnd.at(-1)?.sessionEnd),
+    };
+  }, [rows]);
 
-  if (checking) {
-    return <LoadingShell>관리자 권한을 확인하는 중입니다.</LoadingShell>;
-  }
+  if (checking) return <LoadingShell>관리자 권한을 확인하고 있습니다.</LoadingShell>;
 
   return (
-    <Page>
-      <Head>
-        <div>
-          <BackLink to="/tracelog-dashboard">← Trace Log 대시보드로 돌아가기</BackLink>
-          <Title>이상 세션 페이지</Title>
-          <Copy>세션 시작 시간과 종료 시간 범위를 지정하고 IP로 검색할 수 있습니다.</Copy>
-        </div>
-      </Head>
+    <DashboardPage>
+      <TraceLogHeader
+        title="이상 세션 목록"
+        copy="시간 범위, IP, 정렬 조건으로 탐지된 세션을 조회합니다."
+        summaryCards={formatSummaryCards(header)}
+      />
 
-      <Panel>
-        <FilterGrid>
-          <Field>
-            세션 시작 시간 이후
-            <Input
-              type="datetime-local"
-              value={startAt}
-              min={presetStart}
-              max={presetEnd}
-              onChange={(event) => setStartAt(event.target.value)}
-            />
-          </Field>
+      <MainContent>
+        <BackLink to="/tracelog-dashboard">← 대시보드로 돌아가기</BackLink>
+        <Panel>
+          <PanelHead>
+            <div>
+              <PanelTitle>세션 검색</PanelTitle>
+              <SubText>필터를 변경하면 조건에 맞는 세션이 자동으로 갱신됩니다.</SubText>
+            </div>
+          </PanelHead>
 
-          <Field>
-            세션 종료 시간 이전
-            <Input
-              type="datetime-local"
-              value={endAt}
-              min={presetStart}
-              max={presetEnd}
-              onChange={(event) => setEndAt(event.target.value)}
-            />
-          </Field>
+          <FilterGrid>
+            <Field>
+              시작 시간 이후
+              <Input type="datetime-local" value={startAt} min={dateBounds.min} max={dateBounds.max} onChange={(event) => setStartAt(event.target.value)} />
+            </Field>
+            <Field>
+              종료 시간 이전
+              <Input type="datetime-local" value={endAt} min={dateBounds.min} max={dateBounds.max} onChange={(event) => setEndAt(event.target.value)} />
+            </Field>
+            <Field>
+              IP 검색
+              <Input type="search" placeholder="예: 121.173" value={ipQuery} onChange={(event) => setIpQuery(event.target.value)} />
+            </Field>
+            <Field>
+              정렬 기준
+              <Input value={sortBy === "latest" ? "최신순" : "이상 점수순"} readOnly />
+            </Field>
+          </FilterGrid>
 
-          <Field>
-            IP 검색
-            <Input
-              type="search"
-              placeholder="예: 121.173"
-              value={ipQuery}
-              onChange={(event) => setIpQuery(event.target.value)}
-            />
-          </Field>
-
-          <Field>
-            정렬 기준
-            <Input value={sortBy === "latest" ? "최신순" : "이상 점수순"} readOnly />
-          </Field>
-        </FilterGrid>
-
-        <SortRow>
-            <SortChip
-              type="button"
-              $active={sortBy === "latest"}
-            onClick={() => handleSortChange("latest")}
-            >
+          <SortRow>
+            <SortChip type="button" $active={sortBy === "latest"} onClick={() => handleSortChange("latest")}>
               최신순
             </SortChip>
-          <SortChip
-            type="button"
-            $active={sortBy === "score"}
-            onClick={() => handleSortChange("score")}
-            >
+            <SortChip type="button" $active={sortBy === "score"} onClick={() => handleSortChange("score")}>
               이상 점수순
             </SortChip>
-        </SortRow>
+          </SortRow>
 
-        <ResultMeta>총 {filteredRows.length}개의 이상 세션이 표시됩니다.</ResultMeta>
+          <ResultMeta>{error ? error : loading ? "세션 목록을 불러오는 중입니다." : `총 ${rows.length}개의 세션을 조회했습니다.`}</ResultMeta>
 
-        <TableWrap>
-          {filteredRows.length === 0 ? (
-            <EmptyState>조건에 맞는 이상 세션이 없습니다.</EmptyState>
-          ) : (
-            <DataTable>
-              <thead>
-                <tr>
-                  <th>세션 시작 시간</th>
-                  <th>세션 종료 시간</th>
-                  <th>세션 ID</th>
-                  <th>IP</th>
-                  <th>이상 점수</th>
-                  <th>행위 패턴 추정</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRows.map((row) => (
-                  <ClickableRow
-                    key={row.sessionId}
-                    onClick={() => navigate(`/tracelog-dashboard/sessions/${row.sessionId}`)}
-                  >
-                    <td>{formatDateTime(row.startedAt)}</td>
-                    <td>{formatDateTime(row.endedAt)}</td>
-                    <td>{row.sessionId}</td>
-                    <td>{row.ip}</td>
-                    <td>{row.score.toFixed(2)}</td>
-                    <td>{row.pattern}</td>
-                  </ClickableRow>
-                ))}
-              </tbody>
-            </DataTable>
-          )}
-        </TableWrap>
-      </Panel>
-    </Page>
+          <TableWrap>
+            {loading ? (
+              <EmptyState>세션 목록을 불러오는 중입니다.</EmptyState>
+            ) : rows.length === 0 ? (
+              <EmptyState>조건에 맞는 세션이 없습니다.</EmptyState>
+            ) : (
+              <DataTable $minWidth="1040px">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>시작 시간</th>
+                    <th>종료 시간</th>
+                    <th>IP</th>
+                    <th>User Agent</th>
+                    <th>이상 점수</th>
+                    <th>분석 시간</th>
+                    <th>AI 분석</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <ClickableRow key={row.id} onClick={() => navigate(`/tracelog-dashboard/sessions/${row.id}`)}>
+                      <td>{row.id}</td>
+                      <td>{formatDateTime(row.sessionStart)}</td>
+                      <td>{formatDateTime(row.sessionEnd)}</td>
+                      <td>{row.ip}</td>
+                      <td>
+                        <ClampCell $maxWidth="280px" title={row.userAgent}>
+                          {row.userAgent}
+                        </ClampCell>
+                      </td>
+                      <td>{formatScore(row.anomalyScore)}</td>
+                      <td>{formatDateTime(row.analyzedAt)}</td>
+                      <td>
+                        <ClampCell $maxWidth="260px" title={formatAiAnalysis(row.aiAnalysis)}>
+                          {truncateText(formatAiAnalysis(row.aiAnalysis), 56)}
+                        </ClampCell>
+                      </td>
+                    </ClickableRow>
+                  ))}
+                </tbody>
+              </DataTable>
+            )}
+          </TableWrap>
+        </Panel>
+      </MainContent>
+    </DashboardPage>
   );
 }

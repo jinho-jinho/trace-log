@@ -10,6 +10,7 @@ import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
 import TraceLogSessionDetail from "./pages/TraceLogSessionDetail";
 import TraceLogSessions from "./pages/TraceLogSessions";
+import TraceLogLogDetail from "./pages/TraceLogLogDetail";
 
 import MyOrders from "./pages/MyOrders";
 import MyProfile from "./pages/MyProfile";
@@ -38,6 +39,7 @@ function App() {
           <Route path="/tracelog-dashboard" element={<TraceLogDashboard />} />
           <Route path="/tracelog-dashboard/sessions" element={<TraceLogSessions />} />
           <Route path="/tracelog-dashboard/sessions/:sessionId" element={<TraceLogSessionDetail />} />
+          <Route path="/tracelog-dashboard/sessions/:sessionId/logs" element={<TraceLogLogDetail />} />
           <Route path="/products" element={<ProductList />} />
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/login" element={<Login />} />
