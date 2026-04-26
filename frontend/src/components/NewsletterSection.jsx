@@ -7,55 +7,52 @@ import newsLetter3 from "../assets/newsLetter3.jpg";
 
 const Section = styled.section`
   background: #f6f5f3;
-  padding: 72px 0;
+  padding: clamp(58px, 7vw, 88px) 0;
 `;
 
 const Inner = styled.div`
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 28px;
+  padding: 0 clamp(18px, 4vw, 56px);
 `;
 
 const Content = styled.div`
-  max-width: 1100px;
+  max-width: 720px;
   margin: 0 auto;
+  text-align: center;
 `;
 
 const Title = styled.h2`
   margin: 0;
-  text-align: center;
-  font-size: 36px;
-  font-weight: 600;
-  letter-spacing: -1px;
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 800;
   line-height: 1.2;
 `;
 
-const Sub = styled.div`
-  margin-top: 10px;
-  text-align: center;
-  font-size: 13px;
-  opacity: 0.7;
+const Sub = styled.p`
+  margin: 12px 0 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.7;
 `;
 
 const Form = styled.form`
-  margin-top: 30px;
-  display: flex;
-  justify-content: center;
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 86px;
   gap: 10px;
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const Input = styled.input`
-  width: 360px;
-  height: 44px;
-  border: 1px solid #d7d7d7;
-  border-radius: 2px;
+  height: 46px;
+  border: 1px solid #d4d4d4;
   padding: 0 14px;
-  font-size: 13px;
+  font-size: 14px;
   outline: none;
-
-  &::placeholder {
-    color: #777;
-  }
 
   &:focus {
     border-color: #111;
@@ -63,46 +60,43 @@ const Input = styled.input`
 `;
 
 const Button = styled.button`
-  height: 44px;
-  width: 72px;
+  height: 46px;
   border: 1px solid #111;
   background: #111;
   color: #fff;
-  border-radius: 2px;
   font-size: 13px;
+  font-weight: 800;
   cursor: pointer;
 `;
 
 const Notice = styled.div`
   margin-top: 12px;
-  text-align: center;
+  color: #777;
   font-size: 11px;
-  opacity: 0.6;
-  line-height: 1.5;
+  line-height: 1.6;
 
   a {
     color: inherit;
-    text-decoration: underline;
     text-underline-offset: 2px;
   }
 `;
 
 const Grid = styled.div`
-  margin-top: 54px;
+  margin-top: clamp(42px, 5vw, 60px);
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 44px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(18px, 3vw, 34px);
 
-  max-width: 1100px;
-  margin-left: auto;
-  margin-right: auto;
+  @media (max-width: 820px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
-const Card = styled.div``;
+const Card = styled.article``;
 
 const Img = styled.div`
-  height: 240px;
-  background: #f2f2f2;
+  aspect-ratio: 4 / 2.75;
+  background: #eee;
   overflow: hidden;
 
   img {
@@ -115,16 +109,15 @@ const Img = styled.div`
 
 const Head = styled.div`
   margin-top: 16px;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
+  font-size: 17px;
+  font-weight: 800;
 `;
 
 const Desc = styled.div`
-  margin-top: 10px;
-  font-size: 12.5px;
+  margin-top: 8px;
+  color: #666;
+  font-size: 13px;
   line-height: 1.75;
-  opacity: 0.72;
 `;
 
 export default function NewsletterSection() {
@@ -135,19 +128,19 @@ export default function NewsletterSection() {
       id: 1,
       img: newsLetter1,
       head: "매일 경험하는 편안함",
-      desc: "올버드는 마치 구름 위를 걷는 듯한 가벼움과, 바람처럼 자유로운 탄력을 선사합니다. 놀라운 편안함은 긴 여정도 짧은 산책처럼 느껴집니다.",
+      desc: "가벼운 소재와 부드러운 착화감으로 일상 속 움직임을 자연스럽게 이어갑니다.",
     },
     {
       id: 2,
       img: newsLetter2,
-      head: "지속 가능한 발걸음",
-      desc: "소재를 고르는 순간부터 신발이 당신에게 닿는 그 순간까지 지구에 남기는 흔적을 줄이려합니다. 탄소 발자국을 제로에 가깝게 줄이려는 노력을 동참해주세요.",
+      head: "지속가능한 선택",
+      desc: "소재 선택부터 제작 과정까지 더 낮은 환경 부담을 목표로 제품을 만듭니다.",
     },
     {
       id: 3,
       img: newsLetter3,
-      head: "지구에서 온 소재",
-      desc: "올버즈는 가능한 모든 곳에서 석유 기반 합성소재를 천연 대안으로 대체합니다. 울, 나무, 사탕수수 같은 자연 소재는 부드럽고 통기성이 좋습니다.",
+      head: "자연에서 온 소재",
+      desc: "울, 트리 파이버, 식물 기반 폼처럼 편안함과 책임감을 함께 고려한 소재를 사용합니다.",
     },
   ];
 
@@ -155,26 +148,19 @@ export default function NewsletterSection() {
     <Section>
       <Inner>
         <Content>
-          <Title>올버즈 뉴스레터 구독</Title>
-          <Sub>최신 신제품 소식과 혜택을 가장 먼저 받아보세요.</Sub>
-
+          <Title>새로운 소식 받아보기</Title>
+          <Sub>신상품, 프로모션, 브랜드 소식을 이메일로 가장 먼저 확인하세요.</Sub>
           <Form
             onSubmit={(e) => {
               e.preventDefault();
               setEmail("");
             }}
           >
-            <Input
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
             <Button type="submit">구독</Button>
           </Form>
-
           <Notice>
-            구독 시 마케팅 이메일 수신에 동의하게 됩니다. 자세한 내용은{" "}
-            <a href="/privacy">개인정보 처리방침</a> 및{" "}
+            구독 시 마케팅 이메일 수신에 동의합니다. 자세한 내용은 <a href="/privacy">개인정보 처리방침</a>과{" "}
             <a href="/terms">이용약관</a>을 확인해 주세요.
           </Notice>
         </Content>

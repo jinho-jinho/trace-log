@@ -4,18 +4,14 @@ import homeImg from "../assets/homeImg.jpg";
 
 const Hero = styled.section`
   width: 100%;
-`;
-
-const HeroInner = styled.div`
-  width: 100%;
+  background: #111;
 `;
 
 const HeroImgWrap = styled.div`
   position: relative;
   width: 100%;
-  height: 640px;
+  min-height: clamp(430px, 58vw, 650px);
   overflow: hidden;
-  background: #111;
 `;
 
 const HeroImg = styled.img`
@@ -27,80 +23,85 @@ const HeroImg = styled.img`
   object-position: center;
 `;
 
-const CtaWrap = styled.div`
+const Shade = styled.div`
   position: absolute;
-  right: 72px;
-  bottom: 86px;
-  display: grid;
-  gap: 14px;
-  text-align: right;
-
-  @media (max-width: 900px) {
-    right: 24px;
-    bottom: 30px;
-  }
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.48), rgba(0, 0, 0, 0.1) 55%, rgba(0, 0, 0, 0.42));
 `;
 
-const HeroTitle = styled.h2`
+const Content = styled.div`
+  position: relative;
+  z-index: 1;
+  max-width: 1440px;
+  min-height: clamp(430px, 58vw, 650px);
+  margin: 0 auto;
+  padding: clamp(44px, 7vw, 92px) clamp(22px, 5vw, 72px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+`;
+
+const HeroTitle = styled.h1`
+  max-width: 560px;
   margin: 0;
   color: #fff;
-  font-size: 42px;
-  font-weight: 700;
-  letter-spacing: -1px;
-
-  @media (max-width: 900px) {
-    font-size: 30px;
-  }
+  font-size: clamp(34px, 5vw, 64px);
+  line-height: 1.02;
+  font-weight: 800;
 `;
 
 const HeroSub = styled.p`
-  margin: 0;
+  max-width: 480px;
+  margin: 16px 0 0;
   color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
+  font-size: clamp(14px, 1.4vw, 17px);
+  line-height: 1.7;
 `;
 
 const BtnRow = styled.div`
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
-  justify-content: flex-end;
-  margin-top: 10px;
+  margin-top: 26px;
 `;
 
 const CtaBtn = styled(Link)`
-  text-decoration: none;
-  border: 1px solid #fff;
-  background: #fff;
-  color: #111;
-  height: 42px;
+  min-width: 136px;
+  height: 44px;
   padding: 0 22px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid #fff;
+  background: ${(p) => (p.$dark ? "transparent" : "#fff")};
+  color: ${(p) => (p.$dark ? "#fff" : "#111")};
   font-size: 13px;
-  font-weight: 600;
-  letter-spacing: -0.2px;
+  font-weight: 800;
+  text-decoration: none;
 
   &:hover {
-    opacity: 0.92;
+    background: ${(p) => (p.$dark ? "rgba(255, 255, 255, 0.14)" : "#f2f2f2")};
   }
 `;
 
 export default function HeroSection() {
   return (
     <Hero>
-      <HeroInner>
-        <HeroImgWrap>
-          <HeroImg src={homeImg} alt="Home hero" />
-          <CtaWrap>
-            <HeroTitle>홀리데이 컬렉션</HeroTitle>
-            <HeroSub>소중한 사람에게 전하는 마음</HeroSub>
-            <BtnRow>
-              <CtaBtn to="/products">남성 세일</CtaBtn>
-              <CtaBtn to="/sale/women">여성 세일</CtaBtn>
-            </BtnRow>
-          </CtaWrap>
-        </HeroImgWrap>
-      </HeroInner>
+      <HeroImgWrap>
+        <HeroImg src={homeImg} alt="편안한 데일리 슈즈" />
+        <Shade />
+        <Content>
+          <HeroTitle>매일 신는 편안함을 더 가볍게</HeroTitle>
+          <HeroSub>데일리, 출근, 여행까지 자연스럽게 이어지는 슈즈 컬렉션을 만나보세요.</HeroSub>
+          <BtnRow>
+            <CtaBtn to="/products?gender=men">남성 컬렉션</CtaBtn>
+            <CtaBtn to="/products?gender=women" $dark>
+              여성 컬렉션
+            </CtaBtn>
+          </BtnRow>
+        </Content>
+      </HeroImgWrap>
     </Hero>
   );
 }
