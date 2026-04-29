@@ -1,87 +1,92 @@
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
 const Wrap = styled.section`
-  background: #f6f5f3;
-  padding: 48px 0 36px;
+  background: #fff;
+  padding: clamp(42px, 5vw, 64px) 0;
 `;
 
 const Inner = styled.div`
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 28px;
+  padding: 0 clamp(18px, 4vw, 56px);
 `;
 
 const TitleRow = styled.div`
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 18px;
+  gap: 24px;
+  margin-bottom: 22px;
+
+  @media (max-width: 640px) {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
 `;
 
 const Title = styled.h2`
   margin: 0;
-  font-size: 34px;
-  font-weight: 600;
-  letter-spacing: -1px;
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 800;
 `;
 
 const CategoryRow = styled.div`
-  display: flex;
-  gap: 18px;
-  font-size: 14px;
-  opacity: 0.75;
-  user-select: none;
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid #e0e0e0;
+  background: #f7f7f7;
 `;
 
 const Cat = styled.button`
+  min-width: 92px;
+  height: 34px;
   border: 0;
-  background: transparent;
-  padding: 0;
-  font-size: 14px;
+  background: ${(p) => (p.$active ? "#111" : "transparent")};
+  color: ${(p) => (p.$active ? "#fff" : "#333")};
+  font-size: 13px;
+  font-weight: 800;
   cursor: pointer;
-  color: #111;
-  opacity: ${(p) => (p.$active ? 1 : 0.75)};
-  text-decoration: ${(p) => (p.$active ? "underline" : "none")};
 `;
 
 const SliderBox = styled.div`
   position: relative;
-  overflow: visible;
 `;
 
 const Viewport = styled.div`
-  width: calc(248px * 5 + 20px * 4); /* 1320px */
-  margin: 0 auto; /* 가운데 정렬 */
-  overflow: hidden; /* 6번째 가리기 */
+  overflow: hidden;
 `;
 
 const Track = styled.div`
   display: flex;
-  gap: 20px;
+  gap: 22px;
   transform: translateX(${(p) => `${p.$x}px`});
-  transition: transform 360ms ease;
-  will-change: transform;
+  transition: transform 300ms ease;
 `;
 
 const Card = styled.div`
-  width: 248px;
-  flex: 0 0 248px;
+  flex: 0 0 244px;
   background: #fff;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
-  box-sizing: border-box;
+  border: 1px solid #e8e8e8;
+
+  @media (min-width: 1280px) {
+    flex-basis: 252px;
+  }
 `;
 
 const Img = styled.div`
-  height: 210px;
-  background: #eeeeee;
   position: relative;
+  aspect-ratio: 1 / 0.92;
+  background: #f1f0ed;
   display: grid;
   place-items: center;
 
   img {
     width: 88%;
-    height: auto;
+    height: 88%;
+    object-fit: contain;
     display: block;
   }
 `;
@@ -90,32 +95,34 @@ const NumBadge = styled.div`
   position: absolute;
   top: 10px;
   left: 10px;
-  width: 28px;
+  min-width: 28px;
   height: 28px;
-  border-radius: 2px;
+  padding: 0 8px;
   background: #111;
   color: #fff;
   font-size: 12px;
+  font-weight: 800;
   display: grid;
   place-items: center;
 `;
 
 const Body = styled.div`
-  padding: 14px 14px 16px;
-  background: #fff;
+  min-height: 142px;
+  padding: 15px 16px 18px;
 `;
 
 const Name = styled.div`
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: -0.2px;
+  min-height: 39px;
+  font-size: 13px;
+  font-weight: 800;
   line-height: 1.45;
 `;
 
 const SubName = styled.div`
   margin-top: 4px;
-  font-size: 11px;
-  opacity: 0.72;
+  min-height: 34px;
+  color: #666;
+  font-size: 12px;
   line-height: 1.45;
 `;
 
@@ -128,98 +135,69 @@ const PriceRow = styled.div`
 
 const Price = styled.div`
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
 `;
 
 const Old = styled.div`
+  color: #888;
   font-size: 12px;
-  opacity: 0.45;
   text-decoration: line-through;
 `;
 
-const SizeLabel = styled.div`
-  margin-top: 10px;
-  font-size: 11px;
-  opacity: 0.7;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-`;
-
-const Check = styled.span`
-  font-size: 11px;
-  opacity: 0.8;
-`;
-
 const SizeRow = styled.div`
-  margin-top: 10px;
+  margin-top: 12px;
   display: flex;
-  gap: 10px;
+  gap: 6px;
   flex-wrap: wrap;
 `;
 
 const Size = styled.div`
+  padding: 5px 7px;
+  background: #f5f5f5;
+  border: 1px solid #e4e4e4;
   font-size: 11px;
-  padding: 6px 8px;
-  border-radius: 2px;
-  background: #f6f5f3;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 `;
 
 const Arrow = styled.button`
   position: absolute;
-  top: 50%;
+  top: 42%;
   transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.18);
+  border: 1px solid #dedede;
   background: #fff;
   display: grid;
   place-items: center;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
-  z-index: 1;
-
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
   opacity: ${(p) => (p.$disabled ? 0.35 : 1)};
   cursor: ${(p) => (p.$disabled ? "not-allowed" : "pointer")};
+  z-index: 1;
 `;
 
 const Left = styled(Arrow)`
-  left: -18px;
+  left: -19px;
 `;
 
 const Right = styled(Arrow)`
-  right: -18px;
+  right: -19px;
 `;
 
 function Chevron({ dir = "right" }) {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
-      {dir === "left" ? (
-        <path
-          d="M14.5 5.5L8.5 12l6 6.5"
-          stroke="#111"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ) : (
-        <path
-          d="M9.5 5.5L15.5 12l-6 6.5"
-          stroke="#111"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
+      <path
+        d={dir === "left" ? "M14.5 5.5 8.5 12l6 6.5" : "M9.5 5.5 15.5 12l-6 6.5"}
+        stroke="#111"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
-const formatKRW = (n) =>
-  new Intl.NumberFormat("ko-KR").format(
-    Math.max(0, Math.round(Number(n) || 0))
-  );
+const formatKRW = (n) => `${new Intl.NumberFormat("ko-KR").format(Math.max(0, Math.round(Number(n) || 0)))}원`;
 
 const normCat = (s) =>
   String(s || "")
@@ -228,51 +206,31 @@ const normCat = (s) =>
     .replace(/_/g, "-");
 
 function pickCategoryKey(categories = []) {
-  const cats = (Array.isArray(categories) ? categories : [categories]).map(
-    normCat
-  );
-
-  // lifestyle
-  if (cats.some((c) => c.includes("lifestyle") || c === "life")) return "life";
-
-  // slip-on / slipon / slip
-  if (
-    cats.some(
-      (c) => c.includes("slip-on") || c.includes("slipon") || c === "slip"
-    )
-  )
-    return "slip";
-
-  return "life"; // 디폴트(원하면 변경 가능)
+  const cats = (Array.isArray(categories) ? categories : [categories]).map(normCat);
+  if (cats.some((c) => c.includes("slip-on") || c.includes("slipon") || c === "slip")) return "slip";
+  return "life";
 }
 
 function mapProductToCard(p) {
   const base = Number(p?.basePrice ?? 0);
   const rate = Number(p?.discountRate ?? 0);
   const discounted = rate > 0 ? Math.round(base * (1 - rate / 100)) : base;
-
   const cats = Array.isArray(p?.categories) ? p.categories : [];
-  const catText = cats.length ? cats.join(", ") : "";
 
   return {
-    id: String(p?._id ?? p?.id ?? Math.random()),
-    img: p?.images?.[0] || "", // DB의 첫 번째 이미지 사용
-    name: p?.name || "",
-    sub: p?.shortDescription
-      ? catText
-        ? `${catText}, ${p.shortDescription}`
-        : p.shortDescription
-      : catText,
-    price: `₩${formatKRW(discounted)}`,
-    old: `₩${formatKRW(base)}`,
-    sizes: (p?.availableSizes || []).map((s) => String(s)),
+    id: String(p?._id ?? p?.id ?? crypto.randomUUID()),
+    img: p?.images?.[0] || "",
+    name: p?.name || "상품명 미정",
+    sub: p?.shortDescription || cats.join(", "),
+    price: formatKRW(discounted),
+    old: rate > 0 ? formatKRW(base) : "",
+    sizes: (p?.availableSizes || []).map(String).slice(0, 6),
   };
 }
 
-// “한 번만” 랜덤 셔플 (새로고침 전까진 고정)
 function shuffleOnce(arr) {
   const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
+  for (let i = a.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
@@ -280,12 +238,22 @@ function shuffleOnce(arr) {
 }
 
 export default function RealTimePopularSlider() {
+  const viewportRef = useRef(null);
+  const [viewportW, setViewportW] = useState(0);
   const [category, setCategory] = useState("life");
   const [start, setStart] = useState(0);
-
-  // DB에서 받은 데이터를 카테고리별로 저장
   const [lifeItems, setLifeItems] = useState([]);
   const [slipItems, setSlipItems] = useState([]);
+
+  useEffect(() => {
+    if (!viewportRef.current) return undefined;
+    const el = viewportRef.current;
+    const update = () => setViewportW(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -294,25 +262,17 @@ export default function RealTimePopularSlider() {
       try {
         const res = await fetch("/api/products", { credentials: "include" });
         if (!res.ok) throw new Error(`products fetch failed: ${res.status}`);
-
         const products = await res.json();
-        const mapped = (Array.isArray(products) ? products : []).map(
-          mapProductToCard
-        );
-
         const life = [];
         const slip = [];
 
         for (const raw of Array.isArray(products) ? products : []) {
-          const key = pickCategoryKey(raw?.categories);
           const card = mapProductToCard(raw);
-          if (key === "slip") slip.push(card);
+          if (pickCategoryKey(raw?.categories) === "slip") slip.push(card);
           else life.push(card);
         }
 
         if (!alive) return;
-
-        // 랜덤 고정 (한 번 섞고 state에 넣어서 유지)
         setLifeItems(shuffleOnce(life));
         setSlipItems(shuffleOnce(slip));
       } catch (e) {
@@ -328,26 +288,18 @@ export default function RealTimePopularSlider() {
     };
   }, []);
 
-  const items = useMemo(() => {
-    return category === "life" ? lifeItems : slipItems;
-  }, [category, lifeItems, slipItems]);
-
-  const VISIBLE = 5;
-  const GAP = 20;
-  const CARD_W = 248;
-
-  const maxStart = Math.max(0, items.length - VISIBLE);
+  const items = useMemo(() => (category === "life" ? lifeItems : slipItems), [category, lifeItems, slipItems]);
+  const cardW = viewportW >= 1280 ? 252 : 244;
+  const gap = 22;
+  const visible = Math.max(1, Math.floor((viewportW + gap) / (cardW + gap)));
+  const maxStart = Math.max(0, items.length - visible);
   const canPrev = start > 0;
   const canNext = start < maxStart;
+  const x = -(start * (cardW + gap));
 
-  const x = -(start * (CARD_W + GAP));
-
-  const slideByOne = (dir) => {
-    setStart((s) => {
-      const next = s + (dir === "next" ? 1 : -1);
-      return Math.min(maxStart, Math.max(0, next));
-    });
-  };
+  useEffect(() => {
+    setStart((s) => Math.min(s, maxStart));
+  }, [maxStart]);
 
   const onImgError = (e) => {
     e.currentTarget.src = "/products/placeholder.jpg";
@@ -357,94 +309,48 @@ export default function RealTimePopularSlider() {
     <Wrap>
       <Inner>
         <TitleRow>
-          <Title>실시간 인기</Title>
-          <CategoryRow>
-            <Cat
-              type="button"
-              $active={category === "life"}
-              onClick={() => {
-                setCategory("life");
-                setStart(0);
-              }}
-            >
-              라이프 스타일
+          <Title>실시간 인기 상품</Title>
+          <CategoryRow aria-label="인기 상품 카테고리">
+            <Cat type="button" $active={category === "life"} onClick={() => { setCategory("life"); setStart(0); }}>
+              라이프스타일
             </Cat>
-
-            <Cat
-              type="button"
-              $active={category === "slip"}
-              onClick={() => {
-                setCategory("slip");
-                setStart(0);
-              }}
-            >
+            <Cat type="button" $active={category === "slip"} onClick={() => { setCategory("slip"); setStart(0); }}>
               슬립온
             </Cat>
           </CategoryRow>
         </TitleRow>
 
         <SliderBox>
-          <Left
-            type="button"
-            $disabled={!canPrev}
-            onClick={() => {
-              if (!canPrev) return;
-              slideByOne("prev");
-            }}
-          >
+          <Left type="button" $disabled={!canPrev} onClick={() => canPrev && setStart((s) => s - 1)} aria-label="이전">
             <Chevron dir="left" />
           </Left>
-
-          <Right
-            type="button"
-            $disabled={!canNext}
-            onClick={() => {
-              if (!canNext) return;
-              slideByOne("next");
-            }}
-          >
-            <Chevron dir="right" />
+          <Right type="button" $disabled={!canNext} onClick={() => canNext && setStart((s) => s + 1)} aria-label="다음">
+            <Chevron />
           </Right>
 
-          <Viewport>
+          <Viewport ref={viewportRef}>
             <Track $x={x}>
-              {items.map((p, idx) => {
-                const rank = idx + 1;
-                const showNum = idx >= start && idx < start + VISIBLE;
-
-                return (
-                  <Card key={p.id}>
-                    <Img>
-                      {showNum && <NumBadge>{rank}</NumBadge>}
-                      <img
-                        src={p.img || "/products/placeholder.jpg"}
-                        alt={p.name}
-                        onError={onImgError}
-                      />
-                    </Img>
-
-                    <Body>
-                      <Name>{p.name}</Name>
-                      <SubName>{p.sub}</SubName>
-
-                      <PriceRow>
-                        <Price>{p.price}</Price>
-                        <Old>{p.old}</Old>
-                      </PriceRow>
-
-                      <SizeLabel>
-                        <Check>✓</Check> 주문 가능 사이즈
-                      </SizeLabel>
-
-                      <SizeRow>
-                        {p.sizes.map((s) => (
-                          <Size key={`${p.id}-${s}`}>{s}</Size>
-                        ))}
-                      </SizeRow>
-                    </Body>
-                  </Card>
-                );
-              })}
+              {items.map((p, idx) => (
+                <Card key={p.id}>
+                  <Img>
+                    <NumBadge>{idx + 1}</NumBadge>
+                    <img src={p.img || "/products/placeholder.jpg"} alt={p.name} onError={onImgError} />
+                  </Img>
+                  <Body>
+                    <Name>{p.name}</Name>
+                    <SubName>{p.sub}</SubName>
+                    <PriceRow>
+                      <Price>{p.price}</Price>
+                      {p.old && <Old>{p.old}</Old>}
+                    </PriceRow>
+                    <SizeRow>
+                      {p.sizes.map((s) => (
+                        <Size key={`${p.id}-${s}`}>{s}</Size>
+                      ))}
+                    </SizeRow>
+                  </Body>
+                </Card>
+              ))}
             </Track>
           </Viewport>
         </SliderBox>

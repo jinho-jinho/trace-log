@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../App.css";
 import { readApiResponse } from "../utils/apiResponse.js";
 
@@ -37,6 +38,7 @@ const loginHighlights = [
 ];
 
 function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState(null);
@@ -62,6 +64,7 @@ function Login() {
         type: "success",
         message: data.message || copy.loginSuccess,
       });
+      navigate("/", { replace: true });
     } catch (err) {
       setStatus({ type: "error", message: err.message });
     } finally {
