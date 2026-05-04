@@ -58,8 +58,11 @@ public class SessionService {
         BigDecimal threshold = detectionSetting == null ? BigDecimal.ZERO : detectionSetting.getThresholdValue();
         List<Session> recentSessions = sessionRepository.findAllStartedAfterOrderBySessionStartAsc(headerStartAt);
 
-        List<Session> anomalySessions = recentSessions.stream()
+        List<Session> recentAnomalySessions = recentSessions.stream()
             .filter(session -> isAnomaly(session, threshold))
+            .toList();
+
+        List<Session> anomalySessions = recentAnomalySessions.stream()
             .sorted(Comparator.comparing(Session::getSessionStart).reversed())
             .limit(DASHBOARD_RECENT_LIMIT)
             .toList();
@@ -75,11 +78,8 @@ public class SessionService {
         List<AnomalyScoreTrendPointResponse> trend = buildTrend(now, range);
 
         long totalSessionCount = recentSessions.size();
-        long anomalySessionCount = recentSessions.stream()
-            .filter(session -> isAnomaly(session, threshold))
-            .count();
-        long anomalyIpCount = recentSessions.stream()
-            .filter(session -> isAnomaly(session, threshold))
+        long anomalySessionCount = recentAnomalySessions.size();
+        long anomalyIpCount = recentAnomalySessions.stream()
             .map(Session::getIp)
             .distinct()
             .count();
@@ -179,7 +179,7 @@ public class SessionService {
                 .map(traceLogMapper::toSessionRequestLogDetailItem)
                 .toList(),
             allLogs.stream()
-                .map(SessionRequestLog::getRawLog)
+                .map(SessionRequestLog::getDisplayRawLog)
                 .filter(rawLog -> rawLog != null && !rawLog.isBlank())
                 .collect(java.util.stream.Collectors.joining(System.lineSeparator()))
         );

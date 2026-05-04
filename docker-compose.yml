@@ -2,6 +2,8 @@ services:
   nginx:
     image: nginx:latest
     container_name: trace-log-nginx
+    environment:
+      TZ: Asia/Seoul
     ports:
       - "8081:80"
     volumes:

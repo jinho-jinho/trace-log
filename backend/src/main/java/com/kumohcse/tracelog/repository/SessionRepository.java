@@ -33,6 +33,14 @@ public interface SessionRepository extends JpaRepository<Session, Long>, JpaSpec
         """)
     Optional<Session> findDetailById(Long id);
 
+    @EntityGraph(attributePaths = {"requestLogs", "feature", "featureContributions"})
+    Optional<Session> findByIpAndUserAgentAndSessionStartAndSessionEnd(
+        String ip,
+        String userAgent,
+        LocalDateTime sessionStart,
+        LocalDateTime sessionEnd
+    );
+
     @EntityGraph(attributePaths = {"llmSummary"})
     List<Session> findBySessionStartGreaterThanEqualAndAnomalyScoreGreaterThanEqualOrderBySessionStartDesc(
         LocalDateTime sessionStart,

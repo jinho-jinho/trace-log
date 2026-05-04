@@ -1,6 +1,7 @@
 package com.kumohcse.tracelog.domain;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,6 +26,8 @@ import lombok.NoArgsConstructor;
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SessionRequestLog extends BaseCreatedEntity {
+
+    private static final DateTimeFormatter RAW_LOG_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -94,4 +97,79 @@ public class SessionRequestLog extends BaseCreatedEntity {
 
     @Column(name = "raw_log", columnDefinition = "TEXT")
     private String rawLog;
+
+    public static SessionRequestLog create(
+        Integer sequenceNo,
+        LocalDateTime requestTime,
+        String method,
+        String uri,
+        Integer statusCode,
+        Long responseBytes,
+        String referer,
+        String source,
+        String label,
+        String endpoint,
+        String queryString,
+        Integer uriLength,
+        Integer queryLength,
+        Integer specialCharCount,
+        java.math.BigDecimal specialCharRatio,
+        Integer suspiciousKeywordCount,
+        Boolean isLoginEndpoint,
+        Boolean isAdminEndpoint,
+        Boolean isLoginAttempt,
+        String rawLog
+    ) {
+        SessionRequestLog log = new SessionRequestLog();
+        log.sequenceNo = sequenceNo;
+        log.requestTime = requestTime;
+        log.method = method;
+        log.uri = uri;
+        log.statusCode = statusCode;
+        log.responseBytes = responseBytes;
+        log.referer = referer;
+        log.source = source;
+        log.label = label;
+        log.endpoint = endpoint;
+        log.queryString = queryString;
+        log.uriLength = uriLength;
+        log.queryLength = queryLength;
+        log.specialCharCount = specialCharCount;
+        log.specialCharRatio = specialCharRatio;
+        log.suspiciousKeywordCount = suspiciousKeywordCount;
+        log.isLoginEndpoint = isLoginEndpoint;
+        log.isAdminEndpoint = isAdminEndpoint;
+        log.isLoginAttempt = isLoginAttempt;
+        log.rawLog = rawLog;
+        return log;
+    }
+
+    void assignSession(Session session) {
+        this.session = session;
+        if (rawLog == null || rawLog.isBlank()) {
+            rawLog = buildSyntheticRawLog();
+        }
+    }
+
+    public String getDisplayRawLog() {
+        return rawLog == null || rawLog.isBlank() ? buildSyntheticRawLog() : rawLog;
+    }
+
+    private String buildSyntheticRawLog() {
+        String timeText = requestTime == null ? "-" : requestTime.format(RAW_LOG_TIME_FORMATTER);
+        String statusText = statusCode == null ? "-" : statusCode.toString();
+        String bytesText = responseBytes == null ? "-" : responseBytes.toString();
+        String refererText = referer == null || referer.isBlank() ? "-" : referer;
+        String userAgentText = session == null || session.getUserAgent() == null ? "-" : session.getUserAgent();
+        return "%s - - [%s] \"%s %s HTTP/1.1\" %s %s \"%s\" \"%s\"".formatted(
+            session == null ? "-" : session.getIp(),
+            timeText,
+            method == null ? "-" : method,
+            uri == null ? "-" : uri,
+            statusText,
+            bytesText,
+            refererText,
+            userAgentText
+        );
+    }
 }

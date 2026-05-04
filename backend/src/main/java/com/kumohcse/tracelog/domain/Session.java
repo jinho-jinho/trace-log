@@ -67,4 +67,68 @@ public class Session extends BaseCreatedEntity {
     @OrderBy("absShapValue DESC, id ASC")
     @OneToMany(mappedBy = "session", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<SessionFeatureContribution> featureContributions = new LinkedHashSet<>();
+
+    public static Session create(
+        String ip,
+        String userAgent,
+        LocalDateTime sessionStart,
+        LocalDateTime sessionEnd,
+        BigDecimal durationSec,
+        Integer requestCount
+    ) {
+        Session session = new Session();
+        session.ip = ip;
+        session.userAgent = userAgent;
+        session.sessionStart = sessionStart;
+        session.sessionEnd = sessionEnd;
+        session.durationSec = durationSec;
+        session.requestCount = requestCount;
+        return session;
+    }
+
+    public void updateSummary(
+        String ip,
+        String userAgent,
+        LocalDateTime sessionStart,
+        LocalDateTime sessionEnd,
+        BigDecimal durationSec,
+        Integer requestCount
+    ) {
+        this.ip = ip;
+        this.userAgent = userAgent;
+        this.sessionStart = sessionStart;
+        this.sessionEnd = sessionEnd;
+        this.durationSec = durationSec;
+        this.requestCount = requestCount;
+    }
+
+    public void applyAnalysis(BigDecimal anomalyScore, LocalDateTime analyzedAt) {
+        this.anomalyScore = anomalyScore;
+        this.analyzedAt = analyzedAt;
+    }
+
+    public void replaceRequestLogs(Set<SessionRequestLog> requestLogs) {
+        this.requestLogs.clear();
+        requestLogs.forEach(log -> log.assignSession(this));
+        this.requestLogs.addAll(requestLogs);
+    }
+
+    public void replaceFeature(SessionFeature feature) {
+        if (feature == null) {
+            this.feature = null;
+            return;
+        }
+        if (this.feature != null) {
+            this.feature.updateFrom(feature);
+            return;
+        }
+        feature.assignSession(this);
+        this.feature = feature;
+    }
+
+    public void replaceFeatureContributions(Set<SessionFeatureContribution> featureContributions) {
+        this.featureContributions.clear();
+        featureContributions.forEach(contribution -> contribution.assignSession(this));
+        this.featureContributions.addAll(featureContributions);
+    }
 }
