@@ -42,11 +42,6 @@ app:
   storage:
     image-dir: ${IMAGE_DIR:storage/images}
     public-url-prefix: ${IMAGE_URL_PREFIX:/img}
-  fastapi:
-    base-url: ${FASTAPI_BASE_URL:http://localhost:8000}
-    analyze-path: ${FASTAPI_ANALYZE_PATH:/api/sessions/analyze}
-    connect-timeout: ${FASTAPI_CONNECT_TIMEOUT:3s}
-    read-timeout: ${FASTAPI_READ_TIMEOUT:10s}
 
 springdoc:
   api-docs:
