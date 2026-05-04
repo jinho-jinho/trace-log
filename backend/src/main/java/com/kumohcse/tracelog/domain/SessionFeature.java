@@ -107,4 +107,95 @@ public class SessionFeature {
     @CreationTimestamp
     @Column(name = "feature_calculated_at", nullable = false)
     private LocalDateTime featureCalculatedAt;
+
+    public static SessionFeature create(
+        Integer uniqueUrlCount,
+        Integer uniqueMethodCount,
+        BigDecimal avgRequestIntervalSec,
+        BigDecimal maxRequestIntervalSec,
+        BigDecimal minRequestIntervalSec,
+        BigDecimal error4xxRatio,
+        BigDecimal error5xxRatio,
+        Integer status200Count,
+        BigDecimal avgBytes,
+        Long maxBytes,
+        BigDecimal stdBytes,
+        String urlSequence,
+        String statusSequence,
+        String methodSequence,
+        Integer loginCount,
+        Integer adminCount,
+        BigDecimal avgUriLength,
+        Integer maxUriLength,
+        BigDecimal avgQueryLength,
+        Integer maxQueryLength,
+        Integer specialCharCountSum,
+        BigDecimal specialCharRatioAvg,
+        Integer suspiciousKeywordCountSum,
+        Integer loginAttemptCount,
+        LocalDateTime featureCalculatedAt
+    ) {
+        SessionFeature feature = new SessionFeature();
+        feature.uniqueUrlCount = uniqueUrlCount;
+        feature.uniqueMethodCount = uniqueMethodCount;
+        feature.avgRequestIntervalSec = avgRequestIntervalSec;
+        feature.maxRequestIntervalSec = maxRequestIntervalSec;
+        feature.minRequestIntervalSec = minRequestIntervalSec;
+        feature.error4xxRatio = error4xxRatio;
+        feature.error5xxRatio = error5xxRatio;
+        feature.status200Count = status200Count;
+        feature.avgBytes = avgBytes;
+        feature.maxBytes = maxBytes;
+        feature.stdBytes = stdBytes;
+        feature.urlSequence = urlSequence;
+        feature.statusSequence = statusSequence;
+        feature.methodSequence = methodSequence;
+        feature.loginCount = loginCount;
+        feature.adminCount = adminCount;
+        feature.avgUriLength = avgUriLength;
+        feature.maxUriLength = maxUriLength;
+        feature.avgQueryLength = avgQueryLength;
+        feature.maxQueryLength = maxQueryLength;
+        feature.specialCharCountSum = specialCharCountSum;
+        feature.specialCharRatioAvg = specialCharRatioAvg;
+        feature.suspiciousKeywordCountSum = suspiciousKeywordCountSum;
+        feature.loginAttemptCount = loginAttemptCount;
+        feature.featureCalculatedAt = featureCalculatedAt;
+        return feature;
+    }
+
+    void assignSession(Session session) {
+        this.session = session;
+        this.id = session.getId();
+    }
+
+    void updateFrom(SessionFeature source) {
+        this.uniqueUrlCount = source.uniqueUrlCount;
+        this.uniqueMethodCount = source.uniqueMethodCount;
+        this.avgRequestIntervalSec = source.avgRequestIntervalSec;
+        this.maxRequestIntervalSec = source.maxRequestIntervalSec;
+        this.minRequestIntervalSec = source.minRequestIntervalSec;
+        this.error4xxRatio = source.error4xxRatio;
+        this.error5xxRatio = source.error5xxRatio;
+        this.status200Count = source.status200Count;
+        this.avgBytes = source.avgBytes;
+        this.maxBytes = source.maxBytes;
+        this.stdBytes = source.stdBytes;
+        this.urlSequence = source.urlSequence;
+        this.statusSequence = source.statusSequence;
+        this.methodSequence = source.methodSequence;
+        this.loginCount = source.loginCount;
+        this.adminCount = source.adminCount;
+        this.avgUriLength = source.avgUriLength;
+        this.maxUriLength = source.maxUriLength;
+        this.avgQueryLength = source.avgQueryLength;
+        this.maxQueryLength = source.maxQueryLength;
+        this.specialCharCountSum = source.specialCharCountSum;
+        this.specialCharRatioAvg = source.specialCharRatioAvg;
+        this.suspiciousKeywordCountSum = source.suspiciousKeywordCountSum;
+        this.loginAttemptCount = source.loginAttemptCount;
+        if (source.featureCalculatedAt != null) {
+            this.featureCalculatedAt = source.featureCalculatedAt;
+        }
+    }
 }

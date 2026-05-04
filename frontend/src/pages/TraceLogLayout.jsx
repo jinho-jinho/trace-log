@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import styled from "styled-components";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { formatDateTime, getTraceLogNotifications, markAllTraceLogNotificationsRead, markTraceLogNotificationRead } from "./traceLogApi.js";
 
 export const DashboardPage = styled.section`
   min-height: 100vh;
@@ -112,6 +114,7 @@ export const HeaderActions = styled.div`
 `;
 
 export const IconButton = styled.button`
+  position: relative;
   width: 42px;
   height: 42px;
   border: 1px solid #dfe5ea;
@@ -130,6 +133,136 @@ export const IconButton = styled.button`
     height: 20px;
     stroke: currentColor;
   }
+`;
+
+const UnreadDot = styled.span`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d7263d;
+  box-shadow: 0 0 0 2px #fff;
+`;
+
+const NotificationBackdrop = styled.button`
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  border: 0;
+  background: rgba(16, 24, 32, 0.12);
+  cursor: default;
+`;
+
+const NotificationPanel = styled.aside`
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 31;
+  width: min(420px, 100vw);
+  height: 100vh;
+  border-left: 1px solid #dfe5ea;
+  background: #fff;
+  box-shadow: -16px 0 36px rgba(16, 24, 32, 0.16);
+  display: grid;
+  grid-template-rows: auto 1fr;
+`;
+
+const NotificationHead = styled.div`
+  padding: 20px;
+  border-bottom: 1px solid #e5eaee;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+`;
+
+const NotificationTitle = styled.h2`
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 850;
+`;
+
+const NotificationActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const TextButton = styled.button`
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d6dee4;
+  background: #fff;
+  color: #172026;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+
+  &:hover {
+    background: #eef3f6;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    color: #97a3ad;
+    background: #f7f9fa;
+  }
+`;
+
+const NotificationList = styled.div`
+  overflow-y: auto;
+  padding: 12px;
+`;
+
+const NotificationItem = styled.button`
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid ${(props) => (props.$read ? "#e5eaee" : "#f4d36a")};
+  background: ${(props) => (props.$read ? "#fff" : "#fff7c7")};
+  color: #172026;
+  text-align: left;
+  cursor: pointer;
+
+  & + & {
+    margin-top: 10px;
+  }
+
+  &:hover {
+    border-color: #b8c4cc;
+  }
+`;
+
+const NotificationMeta = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #66737d;
+  font-size: 12px;
+  font-weight: 750;
+`;
+
+const SeverityBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  background: ${(props) => (props.$severity === "danger" ? "#d7263d" : "#f5b700")};
+  color: ${(props) => (props.$severity === "danger" ? "#fff" : "#172026")};
+  font-size: 11px;
+  font-weight: 850;
+`;
+
+const NotificationMessage = styled.p`
+  margin: 0;
+  color: #33414b;
+  font-size: 13px;
+  line-height: 1.45;
 `;
 
 export const MainContent = styled.main`
@@ -258,6 +391,55 @@ export function SettingsIcon() {
 }
 
 export function TraceLogHeader({ title, copy, summaryCards = [] }) {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const loadNotifications = () => {
+    setLoading(true);
+    getTraceLogNotifications()
+      .then((data) => {
+        setNotifications(data.notifications ?? []);
+        setUnreadCount(data.unreadCount ?? 0);
+      })
+      .catch(() => {
+        setNotifications([]);
+        setUnreadCount(0);
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  const handleOpenNotifications = () => {
+    setOpen(true);
+    loadNotifications();
+  };
+
+  const handleMarkAllRead = () => {
+    markAllTraceLogNotificationsRead().then((data) => {
+      setNotifications(data.notifications ?? []);
+      setUnreadCount(data.unreadCount ?? 0);
+    });
+  };
+
+  const handleNotificationClick = (notification) => {
+    const target = notification.sessionId ? `/tracelog-dashboard/sessions/${notification.sessionId}` : "/tracelog-dashboard";
+    markTraceLogNotificationRead(notification.id)
+      .then((data) => {
+        setNotifications(data.notifications ?? []);
+        setUnreadCount(data.unreadCount ?? 0);
+      })
+      .finally(() => {
+        setOpen(false);
+        navigate(target);
+      });
+  };
+
   return (
     <DashboardHeader>
       <HeaderInner>
@@ -277,14 +459,58 @@ export function TraceLogHeader({ title, copy, summaryCards = [] }) {
         </SummaryGrid>
 
         <HeaderActions>
-          <IconButton type="button" aria-label="알림">
+          <IconButton type="button" aria-label="알림" onClick={handleOpenNotifications}>
             <BellIcon />
+            {unreadCount > 0 ? <UnreadDot aria-hidden="true" /> : null}
           </IconButton>
           <IconButton type="button" aria-label="설정">
             <SettingsIcon />
           </IconButton>
         </HeaderActions>
       </HeaderInner>
+
+      {open ? (
+        <>
+          <NotificationBackdrop type="button" aria-label="알림 닫기" onClick={() => setOpen(false)} />
+          <NotificationPanel aria-label="알림 목록">
+            <NotificationHead>
+              <NotificationTitle>알림</NotificationTitle>
+              <NotificationActions>
+                <TextButton type="button" onClick={handleMarkAllRead} disabled={unreadCount === 0}>
+                  모두 읽음
+                </TextButton>
+                <TextButton type="button" onClick={() => setOpen(false)}>
+                  닫기
+                </TextButton>
+              </NotificationActions>
+            </NotificationHead>
+
+            <NotificationList>
+              {loading ? (
+                <EmptyState $height="160px">알림을 불러오는 중입니다.</EmptyState>
+              ) : notifications.length === 0 ? (
+                <EmptyState $height="160px">알림이 없습니다.</EmptyState>
+              ) : (
+                notifications.map((notification) => (
+                  <NotificationItem
+                    key={notification.id}
+                    type="button"
+                    $read={notification.read}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <NotificationMeta>
+                      <SeverityBadge $severity={notification.severity}>{notification.severityLabel}</SeverityBadge>
+                      <span>{formatDateTime(notification.createdAt)}</span>
+                    </NotificationMeta>
+                    <strong>{notification.title}</strong>
+                    <NotificationMessage>{notification.message}</NotificationMessage>
+                  </NotificationItem>
+                ))
+              )}
+            </NotificationList>
+          </NotificationPanel>
+        </>
+      ) : null}
     </DashboardHeader>
   );
 }

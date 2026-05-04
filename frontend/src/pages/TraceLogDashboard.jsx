@@ -114,6 +114,15 @@ const AnalysisCell = styled.span`
   text-overflow: ellipsis;
 `;
 
+const ClickableSessionRow = styled.tr`
+  cursor: pointer;
+
+  &:focus-visible td {
+    outline: 2px solid #2477a8;
+    outline-offset: -2px;
+  }
+`;
+
 const LoadingShell = styled.div`
   min-height: 100vh;
   display: grid;
@@ -183,6 +192,12 @@ function TraceChart({ labels, values }) {
 }
 
 function SessionTable({ title, rows, to }) {
+  const navigate = useNavigate();
+
+  const openSessionDetail = (sessionId) => {
+    navigate(`/tracelog-dashboard/sessions/${sessionId}`);
+  };
+
   return (
     <Panel>
       <TableTitleRow>
@@ -203,7 +218,17 @@ function SessionTable({ title, rows, to }) {
           </thead>
           <tbody>
             {(rows ?? []).map((row) => (
-              <tr key={row.id}>
+              <ClickableSessionRow
+                key={row.id}
+                tabIndex={0}
+                onClick={() => openSessionDetail(row.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openSessionDetail(row.id);
+                  }
+                }}
+              >
                 <td>{row.id}</td>
                 <td>
                   <TimeCell>{formatDateTimeMultiline(row.sessionStart)}</TimeCell>
@@ -212,7 +237,7 @@ function SessionTable({ title, rows, to }) {
                 <td>
                   <AnalysisCell title={formatAiAnalysis(row.aiAnalysis)}>{formatAiAnalysis(row.aiAnalysis)}</AnalysisCell>
                 </td>
-              </tr>
+              </ClickableSessionRow>
             ))}
           </tbody>
         </DataTable>

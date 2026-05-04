@@ -13,6 +13,17 @@ async function fetchJson(path) {
   return data;
 }
 
+async function sendJson(path, options = {}) {
+  const res = await fetch(path, { credentials: "include", ...options });
+  const data = await readApiResponse(res);
+
+  if (!res.ok) {
+    throw new Error(data.message || `Request failed: ${res.status}`);
+  }
+
+  return data;
+}
+
 export function verifyAdminSession(navigate) {
   return async function run() {
     try {
@@ -53,6 +64,18 @@ export function getTraceLogSessionDetail(sessionId) {
 
 export function getTraceLogSessionLogs(sessionId, { page = 0, size = 30 } = {}) {
   return fetchJson(`${TRACELOG_BASE}/sessions/${sessionId}/logs?page=${page}&size=${size}`);
+}
+
+export function getTraceLogNotifications() {
+  return fetchJson(`${TRACELOG_BASE}/notifications`);
+}
+
+export function markAllTraceLogNotificationsRead() {
+  return sendJson(`${TRACELOG_BASE}/notifications/read-all`, { method: "POST" });
+}
+
+export function markTraceLogNotificationRead(notificationId) {
+  return sendJson(`${TRACELOG_BASE}/notifications/${notificationId}/read`, { method: "POST" });
 }
 
 export function formatDateTime(value) {

@@ -265,7 +265,7 @@ public class TraceLogMapper {
 
     private String buildRawLogText(List<SessionRequestLog> logs) {
         return logs.stream()
-            .map(SessionRequestLog::getRawLog)
+            .map(SessionRequestLog::getDisplayRawLog)
             .filter(Objects::nonNull)
             .filter(rawLog -> !rawLog.isBlank())
             .collect(java.util.stream.Collectors.joining(System.lineSeparator()));

@@ -48,4 +48,22 @@ public class SessionFeatureContribution extends BaseCreatedEntity {
 
     @Column(name = "abs_shap_value", nullable = false, precision = 20, scale = 8)
     private BigDecimal absShapValue;
+
+    public static SessionFeatureContribution create(
+        String featureName,
+        BigDecimal featureValue,
+        BigDecimal shapValue,
+        BigDecimal absShapValue
+    ) {
+        SessionFeatureContribution contribution = new SessionFeatureContribution();
+        contribution.featureName = featureName;
+        contribution.featureValue = featureValue;
+        contribution.shapValue = shapValue;
+        contribution.absShapValue = absShapValue == null && shapValue != null ? shapValue.abs() : absShapValue;
+        return contribution;
+    }
+
+    void assignSession(Session session) {
+        this.session = session;
+    }
 }
