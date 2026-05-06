@@ -29,4 +29,16 @@ public class SessionLlmSummary extends BaseCreatedEntity {
 
     @Column(name = "summary_text", nullable = false, columnDefinition = "TEXT")
     private String summaryText;
+
+    public static SessionLlmSummary create(Session session, String summaryText) {
+        SessionLlmSummary summary = new SessionLlmSummary();
+        summary.session = session;
+        summary.id = session.getId();
+        summary.summaryText = summaryText;
+        return summary;
+    }
+
+    public void updateSummaryText(String summaryText) {
+        this.summaryText = summaryText;
+    }
 }

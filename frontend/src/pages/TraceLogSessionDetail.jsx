@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  analyzeTraceLogSessionWithLlm,
   formatAiAnalysis,
   formatDateTime,
   formatScore,
@@ -165,11 +166,82 @@ const ActionButton = styled.button`
   width: 100%;
   height: 42px;
   border: 1px solid #d6dee4;
-  background: #f7f9fa;
-  color: #66737d;
+  background: ${(props) => (props.disabled ? "#f7f9fa" : "#172026")};
+  color: ${(props) => (props.disabled ? "#66737d" : "#fff")};
   font-size: 13px;
   font-weight: 850;
-  cursor: not-allowed;
+  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
+`;
+
+const LlmResult = styled.div`
+  margin: 10px 0 0;
+  display: grid;
+  gap: 12px;
+`;
+
+const LlmSummary = styled.div`
+  border: 1px solid #dfe5ea;
+  background: #fbfcfd;
+  padding: 12px;
+`;
+
+const LlmMetaGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+`;
+
+const LlmMetaCard = styled.div`
+  border: 1px solid #e5eaee;
+  background: #fff;
+  padding: 10px;
+`;
+
+const LlmMetaLabel = styled.div`
+  margin-bottom: 5px;
+  color: #66737d;
+  font-size: 11px;
+  font-weight: 850;
+`;
+
+const LlmMetaValue = styled.div`
+  color: #172026;
+  font-size: 14px;
+  font-weight: 850;
+`;
+
+const LlmSection = styled.div`
+  display: grid;
+  gap: 7px;
+`;
+
+const LlmList = styled.ul`
+  margin: 0;
+  padding-left: 18px;
+  color: #27323a;
+  font-size: 12px;
+  line-height: 1.55;
+`;
+
+const LlmParagraph = styled.p`
+  margin: 0;
+  color: #27323a;
+  font-size: 12px;
+  line-height: 1.6;
+`;
+
+const LlmRawBox = styled.pre`
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid #e1e7ec;
+  background: #fbfcfd;
+  padding: 12px;
+  color: #27323a;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
 `;
 
 const SESSION_LOG_PREVIEW_LIMIT = 15;
@@ -207,6 +279,104 @@ function getSeverity(score, threshold) {
   return "정상 범위";
 }
 
+function parseLlmAnalysis(value) {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function asList(value) {
+  return Array.isArray(value) ? value.filter(Boolean) : [];
+}
+
+function LlmAnalysisView({ value }) {
+  const parsed = parseLlmAnalysis(value);
+  if (!parsed) {
+    return <LlmRawBox>{value}</LlmRawBox>;
+  }
+
+  const secondaryAttackTypes = asList(parsed.secondary_attack_types);
+  const evidence = asList(parsed.evidence);
+  const uncertainties = asList(parsed.uncertainties);
+  const recommendedActions = asList(parsed.recommended_actions);
+
+  return (
+    <LlmResult>
+      <LlmMetaGrid>
+        <LlmMetaCard>
+          <LlmMetaLabel>유형</LlmMetaLabel>
+          <LlmMetaValue>{parsed.attack_type || "Unknown"}</LlmMetaValue>
+        </LlmMetaCard>
+        <LlmMetaCard>
+          <LlmMetaLabel>신뢰도</LlmMetaLabel>
+          <LlmMetaValue>{parsed.confidence || "uncertain"}</LlmMetaValue>
+        </LlmMetaCard>
+      </LlmMetaGrid>
+
+      {secondaryAttackTypes.length ? (
+        <LlmSection>
+          <Label>추가 유형</Label>
+          <LlmList>
+            {secondaryAttackTypes.map((item, index) => (
+              <li key={`${item}-${index}`}>{item}</li>
+            ))}
+          </LlmList>
+        </LlmSection>
+      ) : null}
+
+      {parsed.summary ? (
+        <LlmSummary>
+          <LlmMetaLabel>요약</LlmMetaLabel>
+          <LlmParagraph>{parsed.summary}</LlmParagraph>
+        </LlmSummary>
+      ) : null}
+
+      {evidence.length ? (
+        <LlmSection>
+          <Label>근거</Label>
+          <LlmList>
+            {evidence.map((item, index) => (
+              <li key={`${item}-${index}`}>{item}</li>
+            ))}
+          </LlmList>
+        </LlmSection>
+      ) : null}
+
+      {recommendedActions.length ? (
+        <LlmSection>
+          <Label>권장 조치</Label>
+          <LlmList>
+            {recommendedActions.map((item, index) => (
+              <li key={`${item}-${index}`}>{item}</li>
+            ))}
+          </LlmList>
+        </LlmSection>
+      ) : null}
+
+      {uncertainties.length ? (
+        <LlmSection>
+          <Label>불확실성</Label>
+          <LlmList>
+            {uncertainties.map((item, index) => (
+              <li key={`${item}-${index}`}>{item}</li>
+            ))}
+          </LlmList>
+        </LlmSection>
+      ) : null}
+
+      {!recommendedActions.length && parsed.recommended_action ? (
+        <LlmSummary>
+          <LlmMetaLabel>권장 조치</LlmMetaLabel>
+          <LlmParagraph>{parsed.recommended_action}</LlmParagraph>
+        </LlmSummary>
+      ) : null}
+    </LlmResult>
+  );
+}
+
 export default function TraceLogSessionDetail() {
   const navigate = useNavigate();
   const { sessionId } = useParams();
@@ -215,6 +385,8 @@ export default function TraceLogSessionDetail() {
   const [header, setHeader] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [llmLoading, setLlmLoading] = useState(false);
+  const [llmError, setLlmError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -268,6 +440,22 @@ export default function TraceLogSessionDetail() {
   const threshold = detail.anomalyScore?.thresholdValue;
   const severity = getSeverity(score, threshold);
   const previewLogs = (detail.sessionLogs ?? []).slice(0, SESSION_LOG_PREVIEW_LIMIT);
+  const handleLlmAnalyze = () => {
+    setLlmLoading(true);
+    setLlmError("");
+    analyzeTraceLogSessionWithLlm(sessionId)
+      .then((data) => {
+        setDetail((current) => ({
+          ...current,
+          session: {
+            ...current.session,
+            aiAnalysis: data.aiAnalysis,
+          },
+        }));
+      })
+      .catch((err) => setLlmError(err.message || "LLM 분석을 실행하지 못했습니다."))
+      .finally(() => setLlmLoading(false));
+  };
 
   return (
     <DashboardPage>
@@ -303,14 +491,12 @@ export default function TraceLogSessionDetail() {
                 <Value>{detail.session.requestCount ?? "-"}</Value>
               </InfoBlock>
               <InfoBlock>
-                <Label>AI 분석</Label>
-                <Value>{formatAiAnalysis(detail.session.aiAnalysis)}</Value>
-              </InfoBlock>
-              <InfoBlock>
                 <Label>LLM 분석</Label>
-                <ActionButton type="button" disabled>
-                  연동 예정
+                <ActionButton type="button" disabled={llmLoading} onClick={handleLlmAnalyze}>
+                  {llmLoading ? "분석 중" : detail.session.aiAnalysis ? "다시 분석" : "LLM 분석 실행"}
                 </ActionButton>
+                {llmError ? <Value>{llmError}</Value> : null}
+                {detail.session.aiAnalysis ? <LlmAnalysisView value={detail.session.aiAnalysis} /> : null}
               </InfoBlock>
             </Panel>
 

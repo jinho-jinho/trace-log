@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   formatAiAnalysis,
+  formatAiAnalysisTitle,
   formatDateTime,
   formatScore,
   getTraceLogDashboard,
@@ -271,7 +272,7 @@ export default function TraceLogSessions() {
                       <td>{formatScore(row.anomalyScore)}</td>
                       <td>{formatDateTime(row.analyzedAt)}</td>
                       <td>
-                        <ClampCell $maxWidth="260px" title={formatAiAnalysis(row.aiAnalysis)}>
+                        <ClampCell $maxWidth="260px" title={formatAiAnalysisTitle(row.aiAnalysis)}>
                           {truncateText(formatAiAnalysis(row.aiAnalysis), 56)}
                         </ClampCell>
                       </td>

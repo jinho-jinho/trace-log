@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   buildTrendSeries,
   formatAiAnalysis,
+  formatAiAnalysisTitle,
   formatDateTimeMultiline,
   formatScore,
   formatSummaryCards,
@@ -235,7 +236,7 @@ function SessionTable({ title, rows, to }) {
                 </td>
                 <td>{formatScore(row.anomalyScore)}</td>
                 <td>
-                  <AnalysisCell title={formatAiAnalysis(row.aiAnalysis)}>{formatAiAnalysis(row.aiAnalysis)}</AnalysisCell>
+                  <AnalysisCell title={formatAiAnalysisTitle(row.aiAnalysis)}>{formatAiAnalysis(row.aiAnalysis)}</AnalysisCell>
                 </td>
               </ClickableSessionRow>
             ))}

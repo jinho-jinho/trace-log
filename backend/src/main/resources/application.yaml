@@ -42,6 +42,9 @@ app:
   storage:
     image-dir: ${IMAGE_DIR:storage/images}
     public-url-prefix: ${IMAGE_URL_PREFIX:/img}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-2.5-flash-lite}
 
 springdoc:
   api-docs:
