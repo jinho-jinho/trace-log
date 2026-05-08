@@ -270,15 +270,6 @@ const METRIC_LABELS = {
   loginAttemptCount: "로그인 시도 수",
 };
 
-function getSeverity(score, threshold) {
-  if (score == null || threshold == null) return "기준 미설정";
-  const gap = Number(score) - Number(threshold);
-  if (gap >= 0.3) return "심각";
-  if (gap >= 0.15) return "주의";
-  if (gap >= 0) return "관찰";
-  return "정상 범위";
-}
-
 function parseLlmAnalysis(value) {
   if (!value) return null;
   try {
@@ -438,7 +429,7 @@ export default function TraceLogSessionDetail() {
 
   const score = detail.anomalyScore?.anomalyScore;
   const threshold = detail.anomalyScore?.thresholdValue;
-  const severity = getSeverity(score, threshold);
+  const severity = detail.anomalyScore?.severityLabel || "기준 미설정";
   const previewLogs = (detail.sessionLogs ?? []).slice(0, SESSION_LOG_PREVIEW_LIMIT);
   const handleLlmAnalyze = () => {
     setLlmLoading(true);

@@ -262,6 +262,7 @@ CREATE TABLE detection_settings (
                                     setting_id BIGSERIAL PRIMARY KEY,
                                     threshold_value NUMERIC(8,6) NOT NULL CHECK (threshold_value >= 0),
                                     min_request_count INTEGER NOT NULL CHECK (min_request_count >= 0),
+                                    danger_score_gap NUMERIC(8,6) NOT NULL DEFAULT 0.300000 CHECK (danger_score_gap >= 0),
                                     applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

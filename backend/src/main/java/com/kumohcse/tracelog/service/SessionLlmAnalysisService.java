@@ -172,6 +172,7 @@ public class SessionLlmAnalysisService {
         sessionInfo.put("requestCount", session.getRequestCount());
         sessionInfo.put("anomalyScore", session.getAnomalyScore());
         sessionInfo.put("thresholdValue", detectionSetting == null ? null : detectionSetting.getThresholdValue());
+        sessionInfo.put("dangerScoreGap", detectionSetting == null ? null : detectionSetting.getDangerScoreGap());
         sessionInfo.put("analyzedAt", session.getAnalyzedAt());
         payload.put("session", sessionInfo);
         payload.put("metrics", toMetrics(session.getFeature()));

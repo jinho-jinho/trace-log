@@ -12,6 +12,14 @@ VALUES
         TIMESTAMP '2026-04-02 09:00:00'
     ),
     (
+        'pjho5011@naver.com',
+        '$2a$10$bpWxMsl0gGo9/HzIkQ.3veddsRVb84EYTpBFLm2qJjq.uA5i2mTni',
+        'admin',
+        'admin',
+        TIMESTAMP '2026-04-02 09:00:00',
+        TIMESTAMP '2026-04-02 09:00:00'
+    ),
+    (
         'user1@test.com',
         '$2a$10$bpWxMsl0gGo9/HzIkQ.3veddsRVb84EYTpBFLm2qJjq.uA5i2mTni',
         '홍길동',

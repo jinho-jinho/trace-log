@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TraceLog 위험 세션 감지</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f6f8;font-family:Arial,'Malgun Gothic',sans-serif;color:#172026;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f6f8;padding:28px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="max-width:640px;width:100%;background:#ffffff;border:1px solid #dde5eb;">
+          <tr>
+            <td style="padding:24px 28px;background:#172026;color:#ffffff;">
+              <div style="font-size:13px;font-weight:700;letter-spacing:.02em;color:#d7e5ea;">TraceLog Security Alert</div>
+              <div style="margin-top:8px;font-size:24px;font-weight:900;line-height:1.3;">위험 세션이 감지되었습니다</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 28px;">
+              <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#34434d;" th:text="${message}">
+                이상 세션이 감지되었습니다.
+              </p>
+
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 20px;">
+                <tr>
+                  <td style="width:50%;padding:14px;border:1px solid #e3eaef;background:#fbfcfd;">
+                    <div style="font-size:12px;font-weight:800;color:#66737d;">이상 점수</div>
+                    <div style="margin-top:6px;font-size:28px;font-weight:900;color:#c73535;" th:text="${anomalyScore}">0.98</div>
+                  </td>
+                  <td style="width:50%;padding:14px;border:1px solid #e3eaef;background:#fbfcfd;">
+                    <div style="font-size:12px;font-weight:800;color:#66737d;">임계치 초과분</div>
+                    <div style="margin-top:6px;font-size:28px;font-weight:900;color:#c73535;" th:text="${scoreGap}">0.25</div>
+                  </td>
+                </tr>
+              </table>
+
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;font-size:14px;">
+                <tr>
+                  <th align="left" style="width:150px;padding:11px 12px;border-bottom:1px solid #e5eaee;color:#66737d;">세션 ID</th>
+                  <td style="padding:11px 12px;border-bottom:1px solid #e5eaee;font-weight:800;" th:text="${sessionId}">900000</td>
+                </tr>
+                <tr>
+                  <th align="left" style="padding:11px 12px;border-bottom:1px solid #e5eaee;color:#66737d;">IP</th>
+                  <td style="padding:11px 12px;border-bottom:1px solid #e5eaee;" th:text="${ip}">127.0.0.1</td>
+                </tr>
+                <tr>
+                  <th align="left" style="padding:11px 12px;border-bottom:1px solid #e5eaee;color:#66737d;">요청 수</th>
+                  <td style="padding:11px 12px;border-bottom:1px solid #e5eaee;" th:text="${requestCount}">10</td>
+                </tr>
+                <tr>
+                  <th align="left" style="padding:11px 12px;border-bottom:1px solid #e5eaee;color:#66737d;">세션 시간</th>
+                  <td style="padding:11px 12px;border-bottom:1px solid #e5eaee;">
+                    <span th:text="${sessionStart}">2026-05-06T10:00:00</span>
+                    <span> ~ </span>
+                    <span th:text="${sessionEnd}">2026-05-06T10:01:00</span>
+                  </td>
+                </tr>
+                <tr>
+                  <th align="left" style="padding:11px 12px;border-bottom:1px solid #e5eaee;color:#66737d;">User-Agent</th>
+                  <td style="padding:11px 12px;border-bottom:1px solid #e5eaee;word-break:break-word;" th:text="${userAgent}">Mozilla/5.0</td>
+                </tr>
+              </table>
+
+              <div style="margin-top:22px;padding:14px 16px;background:#fff6f6;border:1px solid #f0c7c7;color:#7c2525;font-size:13px;line-height:1.6;">
+                관리자 대시보드에서 세션 상세, 원문 로그, SHAP 기여도를 확인한 뒤 IP 차단, WAF 규칙 강화, 민감 엔드포인트 접근 제어를 검토하세요.
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 28px;background:#f8fafb;border-top:1px solid #e5eaee;color:#7a8790;font-size:12px;">
+              이 메일은 TraceLog 위험 단계 알림 생성 시 자동 발송되었습니다.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
