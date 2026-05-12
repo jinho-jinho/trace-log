@@ -32,10 +32,15 @@ import com.kumohcse.tracelog.dto.session.SessionLogPreviewResponse;
 import com.kumohcse.tracelog.dto.session.SessionRequestLogDetailItemResponse;
 import com.kumohcse.tracelog.dto.session.TraceLogDashboardResponse;
 
+import lombok.RequiredArgsConstructor;
+
 @Component
+@RequiredArgsConstructor
 public class TraceLogMapper {
 
     private static final int DETAIL_PREVIEW_LIMIT = 30;
+
+    private final AnomalySeverityPolicy anomalySeverityPolicy;
 
     public DashboardHeaderResponse toDashboardHeader(
         BigDecimal averageAnomalyScore,
@@ -190,10 +195,16 @@ public class TraceLogMapper {
     }
 
     public SessionAnomalyScoreResponse toSessionAnomalyScore(Session session, DetectionSetting detectionSetting) {
+        BigDecimal thresholdValue = detectionSetting == null ? null : detectionSetting.getThresholdValue();
+        BigDecimal dangerScoreGap = detectionSetting == null ? null : detectionSetting.getDangerScoreGap();
+        String severity = anomalySeverityPolicy.resolveSeverity(session.getAnomalyScore(), thresholdValue, dangerScoreGap);
         return new SessionAnomalyScoreResponse(
             session.getAnomalyScore(),
             session.getAnalyzedAt(),
-            detectionSetting == null ? null : detectionSetting.getThresholdValue()
+            thresholdValue,
+            dangerScoreGap,
+            severity,
+            anomalySeverityPolicy.toLabel(severity)
         );
     }
 

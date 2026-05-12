@@ -32,6 +32,9 @@ public class DetectionSetting {
     @Column(name = "min_request_count", nullable = false)
     private Integer minRequestCount;
 
+    @Column(name = "danger_score_gap", nullable = false, precision = 8, scale = 6)
+    private BigDecimal dangerScoreGap;
+
     @CreationTimestamp
     @Column(name = "applied_at", nullable = false)
     private LocalDateTime appliedAt;

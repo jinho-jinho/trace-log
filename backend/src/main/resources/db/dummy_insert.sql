@@ -7,8 +7,8 @@ WHERE setting_id = 900001;
 DELETE FROM sessions
 WHERE id BETWEEN 900001 AND 900012;
 
-INSERT INTO detection_settings (setting_id, threshold_value, min_request_count, applied_at)
-VALUES (900001, 0.400000, 5, TIMESTAMP '2026-04-26 08:30:00');
+INSERT INTO detection_settings (setting_id, threshold_value, min_request_count, danger_score_gap, applied_at)
+VALUES (900001, 0.400000, 5, 0.300000, TIMESTAMP '2026-04-26 08:30:00');
 
 INSERT INTO sessions (
     id,

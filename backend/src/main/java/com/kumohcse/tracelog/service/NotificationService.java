@@ -1,6 +1,5 @@
 package com.kumohcse.tracelog.service;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -24,6 +23,8 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final NotificationEmailService notificationEmailService;
+    private final AnomalySeverityPolicy anomalySeverityPolicy;
 
     @Transactional(readOnly = true)
     public NotificationListResponse getNotifications(Long userId) {
@@ -57,14 +58,21 @@ public class NotificationService {
         if (session.getRequestCount() < detectionSetting.getMinRequestCount()) {
             return false;
         }
-        BigDecimal scoreGap = session.getAnomalyScore().subtract(detectionSetting.getThresholdValue());
-        if (scoreGap.signum() < 0) {
+
+        java.math.BigDecimal scoreGap = anomalySeverityPolicy.scoreGap(
+            session.getAnomalyScore(),
+            detectionSetting.getThresholdValue()
+        );
+        String severity = anomalySeverityPolicy.resolveSeverity(
+            session.getAnomalyScore(),
+            detectionSetting.getThresholdValue(),
+            detectionSetting.getDangerScoreGap()
+        );
+        if (AnomalySeverityPolicy.SEVERITY_NORMAL.equals(severity)
+            || AnomalySeverityPolicy.SEVERITY_UNCONFIGURED.equals(severity)) {
             return false;
         }
 
-        String severity = scoreGap.compareTo(new BigDecimal("0.200000")) >= 0
-            ? Notification.SEVERITY_DANGER
-            : Notification.SEVERITY_SUSPICIOUS;
         boolean created = false;
         for (User admin : userRepository.findAll().stream()
             .filter(user -> user.getRole() == UserRole.ADMIN)
@@ -76,7 +84,10 @@ public class NotificationService {
             )) {
                 continue;
             }
-            notificationRepository.save(Notification.anomalySession(admin, session, severity, scoreGap));
+            Notification notification = notificationRepository.save(Notification.anomalySession(admin, session, severity, scoreGap));
+            if (Notification.SEVERITY_DANGER.equals(severity)) {
+                notificationEmailService.sendDangerNotification(admin, session, notification);
+            }
             created = true;
         }
         return created;
@@ -89,7 +100,7 @@ public class NotificationService {
             notification.getSession() == null ? null : notification.getSession().getId(),
             notification.getNotificationType(),
             severity,
-            Notification.SEVERITY_DANGER.equals(severity) ? "위험" : "의심",
+            anomalySeverityPolicy.toLabel(severity),
             notification.getTitle(),
             notification.getMessage(),
             notification.getScoreGap(),

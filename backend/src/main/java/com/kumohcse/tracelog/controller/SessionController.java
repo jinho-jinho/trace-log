@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.kumohcse.tracelog.domain.UserRole;
 import com.kumohcse.tracelog.dto.session.NotificationListResponse;
+import com.kumohcse.tracelog.dto.session.SessionAiAnalysisResponse;
 import com.kumohcse.tracelog.dto.session.SessionDetailResponse;
 import com.kumohcse.tracelog.dto.session.SessionListResponse;
 import com.kumohcse.tracelog.dto.session.SessionLogDetailResponse;
@@ -22,6 +23,7 @@ import com.kumohcse.tracelog.dto.session.TraceLogDashboardResponse;
 import com.kumohcse.tracelog.service.AuthSessionUser;
 import com.kumohcse.tracelog.service.AuthService;
 import com.kumohcse.tracelog.service.NotificationService;
+import com.kumohcse.tracelog.service.SessionLlmAnalysisService;
 import com.kumohcse.tracelog.service.SessionService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,6 +36,7 @@ public class SessionController {
 
     private final SessionService sessionService;
     private final NotificationService notificationService;
+    private final SessionLlmAnalysisService sessionLlmAnalysisService;
     private final AuthService authService;
 
     @GetMapping("/dashboard")
@@ -75,6 +78,15 @@ public class SessionController {
     ) {
         requireAdmin(request);
         return sessionService.getSessionLogDetail(sessionId, page, size);
+    }
+
+    @PostMapping("/sessions/{sessionId}/llm-analysis")
+    public SessionAiAnalysisResponse analyzeSessionWithLlm(
+        @PathVariable Long sessionId,
+        HttpServletRequest request
+    ) {
+        requireAdmin(request);
+        return sessionLlmAnalysisService.analyze(sessionId);
     }
 
     @GetMapping("/notifications")

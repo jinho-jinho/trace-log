@@ -1,15 +1,25 @@
 BEGIN;
 
 WITH latest_setting AS (
-    SELECT COALESCE(
-        (
-            SELECT threshold_value
-            FROM detection_settings
-            ORDER BY applied_at DESC
-            LIMIT 1
-        ),
-        0.400000
-    ) AS threshold_value
+    SELECT
+        COALESCE(
+            (
+                SELECT threshold_value
+                FROM detection_settings
+                ORDER BY applied_at DESC
+                LIMIT 1
+            ),
+            0.400000
+        ) AS threshold_value,
+        COALESCE(
+            (
+                SELECT danger_score_gap
+                FROM detection_settings
+                ORDER BY applied_at DESC
+                LIMIT 1
+            ),
+            0.300000
+        ) AS danger_score_gap
 ),
 target_notifications AS (
     SELECT
@@ -17,7 +27,7 @@ target_notifications AS (
         s.id AS session_id,
         'ANOMALY_SESSION' AS notification_type,
         CASE
-            WHEN s.anomaly_score - latest_setting.threshold_value >= 0.300000 THEN 'danger'
+            WHEN s.anomaly_score - latest_setting.threshold_value >= latest_setting.danger_score_gap THEN 'danger'
             ELSE 'suspicious'
         END AS severity,
         '이상 세션 감지' AS title,

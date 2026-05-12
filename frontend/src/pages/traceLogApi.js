@@ -62,6 +62,10 @@ export function getTraceLogSessionDetail(sessionId) {
   return fetchJson(`${TRACELOG_BASE}/sessions/${sessionId}`);
 }
 
+export function analyzeTraceLogSessionWithLlm(sessionId) {
+  return sendJson(`${TRACELOG_BASE}/sessions/${sessionId}/llm-analysis`, { method: "POST" });
+}
+
 export function getTraceLogSessionLogs(sessionId, { page = 0, size = 30 } = {}) {
   return fetchJson(`${TRACELOG_BASE}/sessions/${sessionId}/logs?page=${page}&size=${size}`);
 }
@@ -125,7 +129,33 @@ export function formatRatio(value) {
 }
 
 export function formatAiAnalysis(value) {
-  return value?.trim() ? value : "분석 없음";
+  const text = value?.trim();
+  if (!text) return "분석 없음";
+
+  try {
+    const parsed = JSON.parse(text);
+    const type = parsed.attack_type || "Unknown";
+    const summary = parsed.summary || "";
+    return summary ? `${type} · ${summary}` : type;
+  } catch {
+    return text;
+  }
+}
+
+export function formatAiAnalysisTitle(value) {
+  const text = value?.trim();
+  if (!text) return "분석 없음";
+
+  try {
+    const parsed = JSON.parse(text);
+    const parts = [];
+    if (parsed.attack_type) parts.push(`유형: ${parsed.attack_type}`);
+    if (parsed.confidence) parts.push(`신뢰도: ${parsed.confidence}`);
+    if (parsed.summary) parts.push(`요약: ${parsed.summary}`);
+    return parts.length ? parts.join("\n") : text;
+  } catch {
+    return text;
+  }
 }
 
 export function formatModelStatus(value) {

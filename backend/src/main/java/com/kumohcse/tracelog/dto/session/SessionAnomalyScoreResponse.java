@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 public record SessionAnomalyScoreResponse(
     BigDecimal anomalyScore,
     LocalDateTime analyzedAt,
-    BigDecimal thresholdValue
+    BigDecimal thresholdValue,
+    BigDecimal dangerScoreGap,
+    String severity,
+    String severityLabel
 ) {
 }
