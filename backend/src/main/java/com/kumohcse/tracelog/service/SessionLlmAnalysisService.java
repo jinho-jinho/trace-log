@@ -125,7 +125,7 @@ public class SessionLlmAnalysisService {
             - evidence에는 가능하면 request_logs 근거와 session_feature_contributions 근거를 모두 포함한다.
             
             분류:
-            - attack_type은 SQL Injection, XSS, Admin Probing, Path Traversal, Brute Force, Scanning, Normal, Unknown 중 하나만 사용한다.
+            - attack_type은 SQL Injection, XSS, Admin Probing, Path Traversal, Brute Force, Scanning과 같은 업계 표준 명칭을 사용하며 Normal, Unknown도 사용한다.
             - 복수 징후가 있으면 근거가 가장 강한 유형을 attack_type으로, 나머지는 secondary_attack_types에 넣는다. 없으면 [].
             - 로그인 실패 1~2회만으로 Brute Force로 단정하지 않는다.
             - threshold가 입력에 없으면 0.75를 기준으로 한다.

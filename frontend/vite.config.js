@@ -16,5 +16,9 @@ export default defineConfig(({ mode }) => {
         "/img": { target, changeOrigin: true },
       },
     },
+    preview: {
+      host: "0.0.0.0",
+      port: 4173,
+    },
   };
 });
