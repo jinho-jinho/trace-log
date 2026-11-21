@@ -11,9 +11,12 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 import com.kumohcse.tracelog.domain.Session;
+
+import jakarta.persistence.LockModeType;
 
 public interface SessionRepository extends JpaRepository<Session, Long>, JpaSpecificationExecutor<Session> {
 
@@ -32,6 +35,10 @@ public interface SessionRepository extends JpaRepository<Session, Long>, JpaSpec
         where s.id = :id
         """)
     Optional<Session> findDetailById(Long id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from Session s where s.id = :id")
+    Optional<Session> findByIdForUpdate(Long id);
 
     @EntityGraph(attributePaths = {"requestLogs", "feature", "featureContributions"})
     Optional<Session> findByIpAndUserAgentAndSessionStartAndSessionEnd(

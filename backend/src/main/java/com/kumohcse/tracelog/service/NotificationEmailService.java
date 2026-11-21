@@ -3,7 +3,6 @@ package com.kumohcse.tracelog.service;
 import java.nio.charset.StandardCharsets;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -17,9 +16,7 @@ import com.kumohcse.tracelog.domain.User;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationEmailService {
@@ -30,37 +27,34 @@ public class NotificationEmailService {
     @Value("${spring.mail.username:}")
     private String fromEmail;
 
-    public void sendDangerNotification(User recipient, Session session, Notification notification) {
-        if (fromEmail == null || fromEmail.isBlank()) {
-            log.info("Skip danger notification email because spring.mail.username is not configured.");
-            return;
-        }
-        if (recipient.getEmail() == null || recipient.getEmail().isBlank()) {
-            log.info("Skip danger notification email because recipient email is empty. userId={}", recipient.getId());
-            return;
-        }
-
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(
-                message,
-                MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
-                StandardCharsets.UTF_8.name()
-            );
-            helper.setFrom(fromEmail);
-            helper.setTo(recipient.getEmail());
-            helper.setSubject("[TraceLog] 위험 세션 감지 - session " + session.getId());
-            helper.setText(buildPlainText(session, notification), buildHtml(session, notification));
-            mailSender.send(message);
-        } catch (MailException | MessagingException e) {
-            log.warn(
-                "Failed to send danger notification email. userId={}, sessionId={}",
-                recipient.getId(),
-                session.getId(),
-                e
-            );
-        }
+    public boolean isConfigured() {
+        return fromEmail != null && !fromEmail.isBlank();
     }
+
+    public DangerEmail prepare(User recipient, Session session, Notification notification) {
+        return new DangerEmail(
+            recipient.getEmail(),
+            "[TraceLog] 위험 세션 감지 - session " + session.getId(),
+            buildPlainText(session, notification),
+            buildHtml(session, notification)
+        );
+    }
+
+    public void send(DangerEmail email) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(
+            message,
+            MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
+            StandardCharsets.UTF_8.name()
+        );
+        helper.setFrom(fromEmail);
+        helper.setTo(email.recipient());
+        helper.setSubject(email.subject());
+        helper.setText(email.plainText(), email.html());
+        mailSender.send(message);
+    }
+
+    public record DangerEmail(String recipient, String subject, String plainText, String html) {}
 
     private String buildHtml(Session session, Notification notification) {
         Context context = new Context();

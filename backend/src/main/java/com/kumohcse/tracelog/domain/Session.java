@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -53,6 +54,9 @@ public class Session extends BaseCreatedEntity {
 
     @Column(name = "analyzed_at")
     private LocalDateTime analyzedAt;
+
+    @Column(name = "analysis_revision")
+    private UUID analysisRevision;
 
     @OrderBy("sequenceNo ASC")
     @OneToMany(mappedBy = "session", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
@@ -105,6 +109,7 @@ public class Session extends BaseCreatedEntity {
     public void applyAnalysis(BigDecimal anomalyScore, LocalDateTime analyzedAt) {
         this.anomalyScore = anomalyScore;
         this.analyzedAt = analyzedAt;
+        this.analysisRevision = UUID.randomUUID();
     }
 
     public void replaceRequestLogs(Set<SessionRequestLog> requestLogs) {

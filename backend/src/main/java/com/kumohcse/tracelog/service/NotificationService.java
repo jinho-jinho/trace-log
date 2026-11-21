@@ -24,6 +24,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final NotificationEmailService notificationEmailService;
+    private final DangerEmailOutbox outbox;
     private final AnomalySeverityPolicy anomalySeverityPolicy;
 
     @Transactional(readOnly = true)
@@ -85,8 +86,9 @@ public class NotificationService {
                 continue;
             }
             Notification notification = notificationRepository.save(Notification.anomalySession(admin, session, severity, scoreGap));
-            if (Notification.SEVERITY_DANGER.equals(severity)) {
-                notificationEmailService.sendDangerNotification(admin, session, notification);
+            if (Notification.SEVERITY_DANGER.equals(severity) && notificationEmailService.isConfigured()
+                && admin.getEmail() != null && !admin.getEmail().isBlank()) {
+                outbox.enqueue(notification.getId(), notificationEmailService.prepare(admin, session, notification));
             }
             created = true;
         }

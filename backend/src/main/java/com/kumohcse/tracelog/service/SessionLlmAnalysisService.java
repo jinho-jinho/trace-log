@@ -1,6 +1,7 @@
 package com.kumohcse.tracelog.service;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.math.BigDecimal;
@@ -8,10 +9,15 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -44,6 +50,7 @@ public class SessionLlmAnalysisService {
     private final ObjectMapper objectMapper;
     private final RestClient.Builder restClientBuilder;
     private final EntityManager entityManager;
+    private final PlatformTransactionManager transactionManager;
 
     @Value("${app.gemini.api-key:}")
     private String apiKey;
@@ -51,18 +58,36 @@ public class SessionLlmAnalysisService {
     @Value("${app.gemini.model:gemini-2.5-flash-lite}")
     private String model;
 
-    @Transactional
+    @Transactional(propagation = Propagation.NEVER)
     public SessionAiAnalysisResponse analyze(Long sessionId) {
         if (apiKey == null || apiKey.isBlank()) {
             throw new ResponseStatusException(BAD_REQUEST, "GEMINI_API_KEY is not configured.");
         }
 
+        TransactionTemplate readTransaction = new TransactionTemplate(transactionManager);
+        readTransaction.setReadOnly(true);
+        AnalysisInput input = readTransaction.execute(status -> loadInput(sessionId));
+
+        String analysisJson = requestGemini(input.payload());
+
+        TransactionTemplate writeTransaction = new TransactionTemplate(transactionManager);
+        return writeTransaction.execute(status -> saveSummary(sessionId, input.revision(), analysisJson));
+    }
+
+    private AnalysisInput loadInput(Long sessionId) {
         Session session = sessionRepository.findDetailById(sessionId)
             .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Session not found."));
         DetectionSetting detectionSetting = detectionSettingRepository.findTopByOrderByAppliedAtDesc()
             .orElse(null);
+        return new AnalysisInput(session.getAnalysisRevision(), buildSessionPayload(session, detectionSetting));
+    }
 
-        String analysisJson = requestGemini(buildSessionPayload(session, detectionSetting));
+    private SessionAiAnalysisResponse saveSummary(Long sessionId, UUID revision, String analysisJson) {
+        Session session = sessionRepository.findByIdForUpdate(sessionId)
+            .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Session not found."));
+        if (!Objects.equals(revision, session.getAnalysisRevision())) {
+            throw new ResponseStatusException(CONFLICT, "Session changed during LLM analysis. Run the analysis again.");
+        }
         SessionLlmSummary summary = sessionLlmSummaryRepository.findById(session.getId())
             .map(existing -> {
                 existing.updateSummaryText(analysisJson);
@@ -77,6 +102,8 @@ public class SessionLlmAnalysisService {
 
         return new SessionAiAnalysisResponse(session.getId(), analysisJson, summary.getCreatedAt());
     }
+
+    private record AnalysisInput(UUID revision, Map<String, Object> payload) {}
 
     private String requestGemini(Map<String, Object> payload) {
         try {
