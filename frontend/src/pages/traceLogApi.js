@@ -70,17 +70,8 @@ export function getTraceLogSessionLogs(sessionId, { page = 0, size = 30 } = {}) 
   return fetchJson(`${TRACELOG_BASE}/sessions/${sessionId}/logs?page=${page}&size=${size}`);
 }
 
-export function getTraceLogNotifications() {
-  return fetchJson(`${TRACELOG_BASE}/notifications`);
-}
 
-export function markAllTraceLogNotificationsRead() {
-  return sendJson(`${TRACELOG_BASE}/notifications/read-all`, { method: "POST" });
-}
 
-export function markTraceLogNotificationRead(notificationId) {
-  return sendJson(`${TRACELOG_BASE}/notifications/${notificationId}/read`, { method: "POST" });
-}
 
 export function formatDateTime(value) {
   if (!value) return "-";
@@ -120,13 +111,27 @@ export function toDateTimeLocalValue(value) {
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
 }
 
-export function formatScore(value, digits = 2) {
+export function formatScore(value, digits = 4) {
   return value == null ? "-" : Number(value).toFixed(digits);
 }
 
-export function formatRatio(value) {
-  return value == null ? "-" : `${(Number(value) * 100).toFixed(1)}%`;
+export function formatModelLabel(value) {
+  if (value === "Normal") return "정상";
+  if (value === "Anomalous") return "이상";
+  return "미판정";
 }
+
+export function formatReferenceLimit(value) {
+  if (value == null) return "";
+  const percentile = Number((Number(value) * 100).toFixed(4));
+  return "P" + percentile + " 초과";
+}
+
+export function formatReferenceScore(value, exceededPercentile) {
+  const referenceLimit = formatReferenceLimit(exceededPercentile);
+  return referenceLimit ? formatScore(value) + " · " + referenceLimit : formatScore(value);
+}
+
 
 export function formatAiAnalysis(value) {
   const text = value?.trim();
@@ -158,12 +163,6 @@ export function formatAiAnalysisTitle(value) {
   }
 }
 
-export function formatModelStatus(value) {
-  if (!value) return "-";
-  if (value === "READY") return "정상";
-  if (value === "UNCONFIGURED") return "미설정";
-  return value;
-}
 
 export function formatCount(value) {
   return value == null ? "-" : String(value);
@@ -175,17 +174,15 @@ export function formatMetricValue(value, suffix = "") {
 
 export function formatSummaryCards(header) {
   return [
-    { label: "24시간 이내 평균 이상 점수", value: header ? formatScore(header.averageAnomalyScore) : "-" },
-    { label: "24시간 이내 이상 세션 수", value: header ? formatCount(header.anomalySessionCount) : "-" },
-    { label: "24시간 이내 이상 세션 비율", value: header ? formatRatio(header.anomalySessionRatio) : "-" },
-    { label: "24시간 이내 이상 IP 수", value: header ? formatCount(header.anomalyIpCount) : "-" },
-    { label: "모델 상태", value: header ? formatModelStatus(header.modelStatus) : "-" },
+    { label: "24시간 평균 백분위", value: formatScore(header?.averageAnomalyScore) },
+    { label: "24시간 분석 세션 수", value: formatCount(header?.analyzedSessionCount) },
+    { label: "24시간 분석 IP 수", value: formatCount(header?.analyzedIpCount) },
   ];
 }
 
 export function buildTrendSeries(scoreTrend, range) {
   const labels = scoreTrend.map((point) => formatTrendLabel(point.bucketStart, range));
-  const values = scoreTrend.map((point) => Number(point.averageAnomalyScore ?? 0));
+  const values = scoreTrend.map((point) => point.averageAnomalyScore ?? null);
   return { labels, values };
 }
 

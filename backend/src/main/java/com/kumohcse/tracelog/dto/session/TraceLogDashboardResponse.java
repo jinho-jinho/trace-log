@@ -5,7 +5,7 @@ import java.util.List;
 public record TraceLogDashboardResponse(
     DashboardHeaderResponse header,
     List<AnomalyScoreTrendPointResponse> scoreTrend,
-    List<DashboardSessionSummaryResponse> anomalySessions,
-    List<DashboardSessionSummaryResponse> topAnomalySessions
+    List<DashboardSessionSummaryResponse> recentSessions,
+    List<DashboardSessionSummaryResponse> topScoredSessions
 ) {
 }

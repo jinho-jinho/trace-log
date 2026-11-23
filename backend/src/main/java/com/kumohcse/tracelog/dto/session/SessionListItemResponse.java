@@ -10,6 +10,8 @@ public record SessionListItemResponse(
     String ip,
     String userAgent,
     BigDecimal anomalyScore,
+    BigDecimal exceededReferencePercentile,
+    String modelLabel,
     LocalDateTime analyzedAt,
     String aiAnalysis
 ) {

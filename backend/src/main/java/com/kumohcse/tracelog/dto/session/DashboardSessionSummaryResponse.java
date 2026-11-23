@@ -7,6 +7,8 @@ public record DashboardSessionSummaryResponse(
     Long id,
     LocalDateTime sessionStart,
     BigDecimal anomalyScore,
+    BigDecimal exceededReferencePercentile,
+    String modelLabel,
     String aiAnalysis
 ) {
 }

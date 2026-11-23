@@ -8,8 +8,10 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 
 public record PipelineSessionImportRequest(
@@ -45,6 +47,23 @@ public record PipelineSessionImportRequest(
     @JsonProperty("anomaly_score")
     @PositiveOrZero
     BigDecimal anomalyScore,
+
+    @JsonProperty("percentile_score")
+    @PositiveOrZero
+    @DecimalMax("1")
+    BigDecimal percentileScore,
+
+    @JsonProperty("raw_score")
+    BigDecimal rawScore,
+
+    @JsonProperty("exceeded_reference_percentile")
+    @PositiveOrZero
+    @DecimalMax("1")
+    BigDecimal exceededReferencePercentile,
+
+    @JsonProperty("model_label")
+    @Pattern(regexp = "Normal|Anomalous")
+    String modelLabel,
 
     @JsonProperty("analyzed_at")
     LocalDateTime analyzedAt,

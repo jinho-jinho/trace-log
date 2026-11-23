@@ -5,6 +5,8 @@ import {
   analyzeTraceLogSessionWithLlm,
   formatAiAnalysis,
   formatDateTime,
+  formatModelLabel,
+  formatReferenceLimit,
   formatScore,
   formatSummaryCards,
   formatTimeOnly,
@@ -428,8 +430,7 @@ export default function TraceLogSessionDetail() {
   if (error || !detail) return <EmptyState $height="100vh">{error || "세션 정보를 찾을 수 없습니다."}</EmptyState>;
 
   const score = detail.anomalyScore?.anomalyScore;
-  const threshold = detail.anomalyScore?.thresholdValue;
-  const severity = detail.anomalyScore?.severityLabel || "기준 미설정";
+  const referenceLimit = formatReferenceLimit(detail.anomalyScore?.exceededReferencePercentile);
   const previewLogs = (detail.sessionLogs ?? []).slice(0, SESSION_LOG_PREVIEW_LIMIT);
   const handleLlmAnalyze = () => {
     setLlmLoading(true);
@@ -452,7 +453,7 @@ export default function TraceLogSessionDetail() {
     <DashboardPage>
       <TraceLogHeader title={`세션 ${sessionId}`} copy="요청 흐름, 원문 로그, 이상 점수 기여도를 함께 확인합니다." summaryCards={summaryCards} />
       <MainContent>
-        <BackLink to="/tracelog-dashboard/sessions">← 이상 세션 목록으로 돌아가기</BackLink>
+        <BackLink to="/tracelog-dashboard/sessions">← 세션 목록으로 돌아가기</BackLink>
 
         <Layout>
           <Column>
@@ -492,15 +493,19 @@ export default function TraceLogSessionDetail() {
             </Panel>
 
             <ScoreCard>
-              <PanelTitle>이상 점수</PanelTitle>
+              <PanelTitle>모델 판정 {formatModelLabel(detail.anomalyScore?.modelLabel)}</PanelTitle>
+              <ScoreMeta>정상 기준 백분위</ScoreMeta>
               <ScoreValue>{formatScore(score)}</ScoreValue>
               <ScoreBar>
                 <ScoreFill $score={score || 0} />
               </ScoreBar>
               <ScoreMeta>
-                <span>임계치 {formatScore(threshold)}</span>
+                <span>
+                  {referenceLimit ? "정상 기준 " + referenceLimit : score == null
+                    ? "백분위 점수가 아직 없습니다."
+                    : ("정상 기준 데이터의 약 " + formatScore(score * 100, 2) + "%보다 높은 점수")}
+                </span>
                 <span>분석 시간 {formatDateTime(detail.anomalyScore?.analyzedAt)}</span>
-                <span>중요도 {severity}</span>
               </ScoreMeta>
             </ScoreCard>
           </Column>

@@ -1,11 +1,9 @@
 package com.kumohcse.tracelog.repository;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -41,25 +39,12 @@ public interface SessionRepository extends JpaRepository<Session, Long>, JpaSpec
         LocalDateTime sessionEnd
     );
 
-    @EntityGraph(attributePaths = {"llmSummary"})
-    List<Session> findBySessionStartGreaterThanEqualAndAnomalyScoreGreaterThanEqualOrderBySessionStartDesc(
-        LocalDateTime sessionStart,
-        BigDecimal anomalyScore,
-        Pageable pageable
-    );
-
-    @EntityGraph(attributePaths = {"llmSummary"})
-    List<Session> findBySessionStartGreaterThanEqualAndAnomalyScoreGreaterThanEqualOrderByAnomalyScoreDescSessionStartDesc(
-        LocalDateTime sessionStart,
-        BigDecimal anomalyScore,
-        Pageable pageable
-    );
-
     @Query("""
         select s
         from Session s
         where s.sessionStart >= :startAt
+          and s.percentileScore is not null
         order by s.sessionStart asc
         """)
-    List<Session> findAllStartedAfterOrderBySessionStartAsc(LocalDateTime startAt);
+    List<Session> findScoredSessionsStartedAfter(LocalDateTime startAt);
 }

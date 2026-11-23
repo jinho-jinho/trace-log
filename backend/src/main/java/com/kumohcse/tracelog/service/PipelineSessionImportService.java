@@ -7,14 +7,12 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kumohcse.tracelog.domain.DetectionSetting;
 import com.kumohcse.tracelog.domain.Session;
 import com.kumohcse.tracelog.domain.SessionFeature;
 import com.kumohcse.tracelog.domain.SessionFeatureContribution;
 import com.kumohcse.tracelog.domain.SessionRequestLog;
 import com.kumohcse.tracelog.dto.session.PipelineSessionImportRequest;
 import com.kumohcse.tracelog.dto.session.PipelineSessionImportResponse;
-import com.kumohcse.tracelog.repository.DetectionSettingRepository;
 import com.kumohcse.tracelog.repository.SessionRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -24,8 +22,6 @@ import lombok.RequiredArgsConstructor;
 public class PipelineSessionImportService {
 
     private final SessionRepository sessionRepository;
-    private final DetectionSettingRepository detectionSettingRepository;
-    private final NotificationService notificationService;
 
     @Transactional
     public PipelineSessionImportResponse importSession(PipelineSessionImportRequest request) {
@@ -42,7 +38,13 @@ public class PipelineSessionImportService {
         );
         session.applyAnalysis(
             request.anomalyScore(),
-            request.analyzedAt() == null && request.anomalyScore() != null ? LocalDateTime.now() : request.analyzedAt()
+            request.percentileScore(),
+            request.rawScore(),
+            request.exceededReferencePercentile(),
+            request.modelLabel(),
+            request.analyzedAt() == null
+                && (request.anomalyScore() != null || request.percentileScore() != null || request.modelLabel() != null)
+                ? LocalDateTime.now() : request.analyzedAt()
         );
 
         session = sessionRepository.saveAndFlush(session);
@@ -65,16 +67,12 @@ public class PipelineSessionImportService {
             session.replaceFeatureContributions(toFeatureContributions(request));
         }
 
-        DetectionSetting detectionSetting = detectionSettingRepository.findTopByOrderByAppliedAtDesc()
-            .orElse(null);
-        boolean notificationCreated = notificationService.createAnomalyNotificationsIfNeeded(session, detectionSetting);
-
         return new PipelineSessionImportResponse(
             session.getId(),
             request.externalSessionId(),
             session.getAnomalyScore(),
             lookupResult.created(),
-            notificationCreated
+            false
         );
     }
 

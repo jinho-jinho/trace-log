@@ -6,7 +6,8 @@ import {
   formatAiAnalysis,
   formatAiAnalysisTitle,
   formatDateTimeMultiline,
-  formatScore,
+  formatModelLabel,
+  formatReferenceScore,
   formatSummaryCards,
   getTraceLogDashboard,
   verifyAdminSession,
@@ -145,13 +146,12 @@ function buildChartPoints(values, width, height, padding) {
   const innerWidth = width - padding.left - padding.right;
   const innerHeight = height - padding.top - padding.bottom;
 
-  return values
-    .map((value, index) => {
-      const x = padding.left + (innerWidth * index) / Math.max(values.length - 1, 1);
-      const y = padding.top + innerHeight * (1 - Math.min(Math.max(value, 0), 1));
-      return `${x},${y}`;
-    })
-    .join(" ");
+  return values.map((value, index) => {
+    if (value == null) return null;
+    const x = padding.left + (innerWidth * index) / Math.max(values.length - 1, 1);
+    const y = padding.top + innerHeight * (1 - value);
+    return { x, y };
+  });
 }
 
 function TraceChart({ labels, values }) {
@@ -161,9 +161,12 @@ function TraceChart({ labels, values }) {
   const innerWidth = width - padding.left - padding.right;
   const innerHeight = height - padding.top - padding.bottom;
   const chartPoints = buildChartPoints(values, width, height, padding);
+  const chartPath = chartPoints.map((point, index) => (
+    point ? [chartPoints[index - 1] ? "L" : "M", point.x, point.y].join(" ") : ""
+  )).join(" ");
 
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label="시간대별 평균 이상 점수 추이">
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label="시간대별 평균 백분위 추이">
       <rect x="0" y="0" width={width} height={height} fill="#ffffff" />
       {[0, 0.25, 0.5, 0.75, 1].map((tick) => {
         const y = padding.top + innerHeight * (1 - tick);
@@ -187,7 +190,10 @@ function TraceChart({ labels, values }) {
           </g>
         );
       })}
-      <polyline fill="none" stroke="#2477a8" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" points={chartPoints} />
+      <path fill="none" stroke="#2477a8" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" d={chartPath} />
+      {chartPoints.map((point, index) => point && (
+        <circle key={index} cx={point.x} cy={point.y} r="3.5" fill="#2477a8" />
+      ))}
     </svg>
   );
 }
@@ -213,7 +219,8 @@ function SessionTable({ title, rows, to }) {
             <tr>
               <th>ID</th>
               <th>시작 시간</th>
-              <th>점수</th>
+              <th>모델 판정</th>
+              <th>정상 기준 백분위</th>
               <th>AI 분석</th>
             </tr>
           </thead>
@@ -234,7 +241,8 @@ function SessionTable({ title, rows, to }) {
                 <td>
                   <TimeCell>{formatDateTimeMultiline(row.sessionStart)}</TimeCell>
                 </td>
-                <td>{formatScore(row.anomalyScore)}</td>
+                <td>{formatModelLabel(row.modelLabel)}</td>
+                <td>{formatReferenceScore(row.anomalyScore, row.exceededReferencePercentile)}</td>
                 <td>
                   <AnalysisCell title={formatAiAnalysisTitle(row.aiAnalysis)}>{formatAiAnalysis(row.aiAnalysis)}</AnalysisCell>
                 </td>
@@ -295,7 +303,7 @@ export default function TraceLogDashboard() {
   return (
     <DashboardPage>
       <TraceLogHeader
-        title="보안 이상 탐지 대시보드"
+        title="보안 이상 점수 대시보드"
         copy="세션 기반 요청 패턴과 AI 분석 결과를 한 화면에서 모니터링합니다."
         summaryCards={summaryCards}
       />
@@ -308,8 +316,8 @@ export default function TraceLogDashboard() {
           <Panel>
             <PanelHead>
               <div>
-                <PanelTitle>시간대별 평균 이상 점수</PanelTitle>
-                <SubText>선택한 기간 동안 탐지 모델이 산출한 평균 이상 점수 추이입니다.</SubText>
+                <PanelTitle>시간대별 평균 백분위</PanelTitle>
+                <SubText>정상 기준 데이터 대비 세션의 평균 점수 추이입니다.</SubText>
               </div>
               <RangeTabs role="tablist" aria-label="차트 기간">
                 {RANGE_OPTIONS.map((option) => (
@@ -322,15 +330,17 @@ export default function TraceLogDashboard() {
             <ChartFrame>
               {loading ? (
                 <EmptyState $height="360px">추이 데이터를 불러오는 중입니다.</EmptyState>
-              ) : (
+              ) : chartData.values.some((value) => value != null) ? (
                 <TraceChart labels={chartData.labels} values={chartData.values} />
+              ) : (
+                <EmptyState $height="360px">선택한 기간에 백분위 점수가 없습니다.</EmptyState>
               )}
             </ChartFrame>
           </Panel>
 
           <SessionGrid>
-            <SessionTable title="24시간 이내 최근 이상 세션" rows={dashboard?.anomalySessions} to="/tracelog-dashboard/sessions?sort=latest" />
-            <SessionTable title="24시간 이내 Top 이상 세션" rows={dashboard?.topAnomalySessions} to="/tracelog-dashboard/sessions?sort=score" />
+            <SessionTable title="24시간 이내 최근 분석 세션" rows={dashboard?.recentSessions} to="/tracelog-dashboard/sessions?sort=latest" />
+            <SessionTable title="24시간 이내 점수가 높은 세션" rows={dashboard?.topScoredSessions} to="/tracelog-dashboard/sessions?sort=score" />
           </SessionGrid>
         </DashboardStack>
       </MainContent>

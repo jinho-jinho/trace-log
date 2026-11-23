@@ -5,7 +5,8 @@ import {
   formatAiAnalysis,
   formatAiAnalysisTitle,
   formatDateTime,
-  formatScore,
+  formatModelLabel,
+  formatReferenceScore,
   getTraceLogDashboard,
   getTraceLogSessions,
   toDateTimeLocalValue,
@@ -193,8 +194,8 @@ export default function TraceLogSessions() {
   return (
     <DashboardPage>
       <TraceLogHeader
-        title="이상 세션 목록"
-        copy="시간 범위, IP, 정렬 조건으로 탐지된 세션을 조회합니다."
+        title="세션 목록"
+        copy="시간 범위, IP, 점수 순으로 세션과 요청 로그를 찾아봅니다."
         summaryCards={formatSummaryCards(header)}
       />
 
@@ -223,7 +224,7 @@ export default function TraceLogSessions() {
             </Field>
             <Field>
               정렬 기준
-              <Input value={sortBy === "latest" ? "최신순" : "이상 점수순"} readOnly />
+              <Input value={sortBy === "latest" ? "최신순" : "백분위순"} readOnly />
             </Field>
           </FilterGrid>
 
@@ -232,7 +233,7 @@ export default function TraceLogSessions() {
               최신순
             </SortChip>
             <SortChip type="button" $active={sortBy === "score"} onClick={() => handleSortChange("score")}>
-              이상 점수순
+              백분위순
             </SortChip>
           </SortRow>
 
@@ -252,7 +253,8 @@ export default function TraceLogSessions() {
                     <th>종료 시간</th>
                     <th>IP</th>
                     <th>User Agent</th>
-                    <th>이상 점수</th>
+                    <th>모델 판정</th>
+                    <th>정상 기준 백분위</th>
                     <th>분석 시간</th>
                     <th>AI 분석</th>
                   </tr>
@@ -269,7 +271,8 @@ export default function TraceLogSessions() {
                           {row.userAgent}
                         </ClampCell>
                       </td>
-                      <td>{formatScore(row.anomalyScore)}</td>
+                      <td>{formatModelLabel(row.modelLabel)}</td>
+                      <td>{formatReferenceScore(row.anomalyScore, row.exceededReferencePercentile)}</td>
                       <td>{formatDateTime(row.analyzedAt)}</td>
                       <td>
                         <ClampCell $maxWidth="260px" title={formatAiAnalysisTitle(row.aiAnalysis)}>

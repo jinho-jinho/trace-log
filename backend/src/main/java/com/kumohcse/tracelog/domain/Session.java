@@ -51,6 +51,18 @@ public class Session extends BaseCreatedEntity {
     @Column(name = "anomaly_score", precision = 8, scale = 6)
     private BigDecimal anomalyScore;
 
+    @Column(name = "percentile_score", precision = 8, scale = 6)
+    private BigDecimal percentileScore;
+
+    @Column(name = "raw_score", precision = 24, scale = 18)
+    private BigDecimal rawScore;
+
+    @Column(name = "exceeded_reference_percentile", precision = 8, scale = 6)
+    private BigDecimal exceededReferencePercentile;
+
+    @Column(name = "model_label", length = 16)
+    private String modelLabel;
+
     @Column(name = "analyzed_at")
     private LocalDateTime analyzedAt;
 
@@ -102,8 +114,19 @@ public class Session extends BaseCreatedEntity {
         this.requestCount = requestCount;
     }
 
-    public void applyAnalysis(BigDecimal anomalyScore, LocalDateTime analyzedAt) {
+    public void applyAnalysis(
+        BigDecimal anomalyScore,
+        BigDecimal percentileScore,
+        BigDecimal rawScore,
+        BigDecimal exceededReferencePercentile,
+        String modelLabel,
+        LocalDateTime analyzedAt
+    ) {
         this.anomalyScore = anomalyScore;
+        this.percentileScore = percentileScore;
+        this.rawScore = rawScore;
+        this.exceededReferencePercentile = exceededReferencePercentile;
+        this.modelLabel = modelLabel;
         this.analyzedAt = analyzedAt;
     }
 

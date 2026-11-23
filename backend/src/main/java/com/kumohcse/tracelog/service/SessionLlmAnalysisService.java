@@ -17,14 +17,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kumohcse.tracelog.domain.DetectionSetting;
 import com.kumohcse.tracelog.domain.Session;
 import com.kumohcse.tracelog.domain.SessionFeature;
 import com.kumohcse.tracelog.domain.SessionFeatureContribution;
 import com.kumohcse.tracelog.domain.SessionLlmSummary;
 import com.kumohcse.tracelog.domain.SessionRequestLog;
 import com.kumohcse.tracelog.dto.session.SessionAiAnalysisResponse;
-import com.kumohcse.tracelog.repository.DetectionSettingRepository;
 import com.kumohcse.tracelog.repository.SessionLlmSummaryRepository;
 import com.kumohcse.tracelog.repository.SessionRepository;
 
@@ -40,7 +38,6 @@ public class SessionLlmAnalysisService {
 
     private final SessionRepository sessionRepository;
     private final SessionLlmSummaryRepository sessionLlmSummaryRepository;
-    private final DetectionSettingRepository detectionSettingRepository;
     private final ObjectMapper objectMapper;
     private final RestClient.Builder restClientBuilder;
     private final EntityManager entityManager;
@@ -59,10 +56,7 @@ public class SessionLlmAnalysisService {
 
         Session session = sessionRepository.findDetailById(sessionId)
             .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Session not found."));
-        DetectionSetting detectionSetting = detectionSettingRepository.findTopByOrderByAppliedAtDesc()
-            .orElse(null);
-
-        String analysisJson = requestGemini(buildSessionPayload(session, detectionSetting));
+        String analysisJson = requestGemini(buildSessionPayload(session));
         SessionLlmSummary summary = sessionLlmSummaryRepository.findById(session.getId())
             .map(existing -> {
                 existing.updateSummaryText(analysisJson);
@@ -128,9 +122,9 @@ public class SessionLlmAnalysisService {
             - attack_type은 SQL Injection, XSS, Admin Probing, Path Traversal, Brute Force, Scanning과 같은 업계 표준 명칭을 사용하며 Normal, Unknown도 사용한다.
             - 복수 징후가 있으면 근거가 가장 강한 유형을 attack_type으로, 나머지는 secondary_attack_types에 넣는다. 없으면 [].
             - 로그인 실패 1~2회만으로 Brute Force로 단정하지 않는다.
-            - threshold가 입력에 없으면 0.75를 기준으로 한다.
-            - anomaly_score가 높지만 공격 근거가 부족하면 Unknown을 선택한다.
-            - Normal은 anomaly_score가 threshold 이하 또는 근접하고 의심 로그/feature가 거의 없을 때만 선택한다.
+            - percentileScore는 정상 기준 데이터에서 세션 점수의 위치를 보여준다.
+            - 요청 흐름이 일반적인 서비스 사용과 일치하면 Normal을 선택한다.
+            - 공격 근거가 부족하고 정상 흐름을 확인할 수 없으면 Unknown을 선택한다.
             - 근거 부족은 uncertainties에 적고, 없으면 [].
             
             confidence:
@@ -160,7 +154,7 @@ public class SessionLlmAnalysisService {
             """;
     }
 
-    private Map<String, Object> buildSessionPayload(Session session, DetectionSetting detectionSetting) {
+    private Map<String, Object> buildSessionPayload(Session session) {
         Map<String, Object> payload = new LinkedHashMap<>();
         Map<String, Object> sessionInfo = new LinkedHashMap<>();
         sessionInfo.put("id", session.getId());
@@ -170,9 +164,7 @@ public class SessionLlmAnalysisService {
         sessionInfo.put("sessionEnd", session.getSessionEnd());
         sessionInfo.put("durationSec", session.getDurationSec());
         sessionInfo.put("requestCount", session.getRequestCount());
-        sessionInfo.put("anomalyScore", session.getAnomalyScore());
-        sessionInfo.put("thresholdValue", detectionSetting == null ? null : detectionSetting.getThresholdValue());
-        sessionInfo.put("dangerScoreGap", detectionSetting == null ? null : detectionSetting.getDangerScoreGap());
+        sessionInfo.put("percentileScore", session.getPercentileScore());
         sessionInfo.put("analyzedAt", session.getAnalyzedAt());
         payload.put("session", sessionInfo);
         payload.put("metrics", toMetrics(session.getFeature()));

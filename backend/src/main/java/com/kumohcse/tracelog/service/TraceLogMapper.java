@@ -10,7 +10,6 @@ import java.util.Objects;
 
 import org.springframework.stereotype.Component;
 
-import com.kumohcse.tracelog.domain.DetectionSetting;
 import com.kumohcse.tracelog.domain.Session;
 import com.kumohcse.tracelog.domain.SessionFeature;
 import com.kumohcse.tracelog.domain.SessionFeatureContribution;
@@ -32,31 +31,10 @@ import com.kumohcse.tracelog.dto.session.SessionLogPreviewResponse;
 import com.kumohcse.tracelog.dto.session.SessionRequestLogDetailItemResponse;
 import com.kumohcse.tracelog.dto.session.TraceLogDashboardResponse;
 
-import lombok.RequiredArgsConstructor;
-
 @Component
-@RequiredArgsConstructor
 public class TraceLogMapper {
 
     private static final int DETAIL_PREVIEW_LIMIT = 30;
-
-    private final AnomalySeverityPolicy anomalySeverityPolicy;
-
-    public DashboardHeaderResponse toDashboardHeader(
-        BigDecimal averageAnomalyScore,
-        long anomalySessionCount,
-        BigDecimal anomalySessionRatio,
-        long anomalyIpCount,
-        String modelStatus
-    ) {
-        return new DashboardHeaderResponse(
-            averageAnomalyScore,
-            anomalySessionCount,
-            anomalySessionRatio,
-            anomalyIpCount,
-            modelStatus
-        );
-    }
 
     public AnomalyScoreTrendPointResponse toTrendPoint(
         LocalDateTime bucketStart,
@@ -69,16 +47,16 @@ public class TraceLogMapper {
     public TraceLogDashboardResponse toDashboardResponse(
         DashboardHeaderResponse header,
         List<AnomalyScoreTrendPointResponse> scoreTrend,
-        List<Session> anomalySessions,
-        List<Session> topAnomalySessions
+        List<Session> recentSessions,
+        List<Session> topScoredSessions
     ) {
         return new TraceLogDashboardResponse(
             header,
             scoreTrend,
-            anomalySessions.stream()
+            recentSessions.stream()
                 .map(this::toDashboardSessionSummary)
                 .toList(),
-            topAnomalySessions.stream()
+            topScoredSessions.stream()
                 .map(this::toDashboardSessionSummary)
                 .toList()
         );
@@ -88,7 +66,9 @@ public class TraceLogMapper {
         return new DashboardSessionSummaryResponse(
             session.getId(),
             session.getSessionStart(),
-            session.getAnomalyScore(),
+            session.getPercentileScore(),
+            session.getExceededReferencePercentile(),
+            session.getModelLabel(),
             getAiAnalysis(session)
         );
     }
@@ -109,13 +89,15 @@ public class TraceLogMapper {
             session.getSessionEnd(),
             session.getIp(),
             session.getUserAgent(),
-            session.getAnomalyScore(),
+            session.getPercentileScore(),
+            session.getExceededReferencePercentile(),
+            session.getModelLabel(),
             session.getAnalyzedAt(),
             getAiAnalysis(session)
         );
     }
 
-    public SessionDetailResponse toSessionDetail(Session session, DetectionSetting detectionSetting) {
+    public SessionDetailResponse toSessionDetail(Session session) {
         List<SessionRequestLog> previewLogs = getSortedLogs(session).stream()
             .limit(DETAIL_PREVIEW_LIMIT)
             .toList();
@@ -130,7 +112,12 @@ public class TraceLogMapper {
             getSortedFeatureContributions(session).stream()
                 .map(this::toFeatureContribution)
                 .toList(),
-            toSessionAnomalyScore(session, detectionSetting)
+            new SessionAnomalyScoreResponse(
+                session.getPercentileScore(),
+                session.getExceededReferencePercentile(),
+                session.getModelLabel(),
+                session.getAnalyzedAt()
+            )
         );
     }
 
@@ -191,20 +178,6 @@ public class TraceLogMapper {
             contribution.getFeatureName(),
             contribution.getFeatureValue(),
             contribution.getShapValue()
-        );
-    }
-
-    public SessionAnomalyScoreResponse toSessionAnomalyScore(Session session, DetectionSetting detectionSetting) {
-        BigDecimal thresholdValue = detectionSetting == null ? null : detectionSetting.getThresholdValue();
-        BigDecimal dangerScoreGap = detectionSetting == null ? null : detectionSetting.getDangerScoreGap();
-        String severity = anomalySeverityPolicy.resolveSeverity(session.getAnomalyScore(), thresholdValue, dangerScoreGap);
-        return new SessionAnomalyScoreResponse(
-            session.getAnomalyScore(),
-            session.getAnalyzedAt(),
-            thresholdValue,
-            dangerScoreGap,
-            severity,
-            anomalySeverityPolicy.toLabel(severity)
         );
     }
 

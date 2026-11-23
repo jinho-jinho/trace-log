@@ -19,15 +19,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.kumohcse.tracelog.domain.DetectionSetting;
 import com.kumohcse.tracelog.domain.Session;
 import com.kumohcse.tracelog.domain.SessionRequestLog;
 import com.kumohcse.tracelog.dto.session.AnomalyScoreTrendPointResponse;
+import com.kumohcse.tracelog.dto.session.DashboardHeaderResponse;
 import com.kumohcse.tracelog.dto.session.SessionDetailResponse;
 import com.kumohcse.tracelog.dto.session.SessionListResponse;
 import com.kumohcse.tracelog.dto.session.SessionLogDetailResponse;
 import com.kumohcse.tracelog.dto.session.TraceLogDashboardResponse;
-import com.kumohcse.tracelog.repository.DetectionSettingRepository;
 import com.kumohcse.tracelog.repository.SessionRepository;
 import com.kumohcse.tracelog.repository.SessionRequestLogRepository;
 
@@ -43,71 +42,45 @@ public class SessionService {
     private static final int DASHBOARD_TOP_LIMIT = 5;
     private static final int DEFAULT_LOG_PAGE_SIZE = 30;
     private static final int MAX_LOG_PAGE_SIZE = 100;
+    private static final Comparator<Session> SCORE_ORDER = Comparator
+        .comparing(Session::getPercentileScore, Comparator.reverseOrder())
+        .thenComparing(Session::getRawScore, Comparator.nullsLast(Comparator.reverseOrder()))
+        .thenComparing(Session::getSessionStart, Comparator.reverseOrder())
+        .thenComparing(Session::getId, Comparator.reverseOrder());
 
     private final SessionRepository sessionRepository;
     private final SessionRequestLogRepository sessionRequestLogRepository;
-    private final DetectionSettingRepository detectionSettingRepository;
     private final TraceLogMapper traceLogMapper;
 
     public TraceLogDashboardResponse getDashboard(String rangeKey) {
-        DetectionSetting detectionSetting = detectionSettingRepository.findTopByOrderByAppliedAtDesc()
-            .orElse(null);
-
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime headerStartAt = now.minusHours(24);
-        BigDecimal threshold = detectionSetting == null ? BigDecimal.ZERO : detectionSetting.getThresholdValue();
-        List<Session> recentSessions = sessionRepository.findAllStartedAfterOrderBySessionStartAsc(headerStartAt);
+        List<Session> scoredSessions = sessionRepository.findScoredSessionsStartedAfter(headerStartAt);
 
-        List<Session> recentAnomalySessions = recentSessions.stream()
-            .filter(session -> isAnomaly(session, threshold))
-            .toList();
-
-        List<Session> anomalySessions = recentAnomalySessions.stream()
+        List<Session> recentSessions = scoredSessions.stream()
             .sorted(Comparator.comparing(Session::getSessionStart).reversed())
             .limit(DASHBOARD_RECENT_LIMIT)
             .toList();
 
-        List<Session> topAnomalySessions = sessionRepository
-            .findBySessionStartGreaterThanEqualAndAnomalyScoreGreaterThanEqualOrderByAnomalyScoreDescSessionStartDesc(
-                headerStartAt,
-                threshold,
-                PageRequest.of(0, DASHBOARD_TOP_LIMIT)
-            );
+        List<Session> topScoredSessions = scoredSessions.stream()
+            .sorted(SCORE_ORDER)
+            .limit(DASHBOARD_TOP_LIMIT)
+            .toList();
 
         DashboardRange range = DashboardRange.from(rangeKey);
         List<AnomalyScoreTrendPointResponse> trend = buildTrend(now, range);
 
-        long totalSessionCount = recentSessions.size();
-        long anomalySessionCount = recentAnomalySessions.size();
-        long anomalyIpCount = recentAnomalySessions.stream()
+        long analyzedIpCount = scoredSessions.stream()
             .map(Session::getIp)
             .distinct()
             .count();
-        BigDecimal averageAnomalyScore = recentSessions.stream()
-            .map(Session::getAnomalyScore)
-            .filter(score -> score != null)
-            .reduce(BigDecimal::add)
-            .map(sum -> sum.divide(BigDecimal.valueOf(recentSessions.stream()
-                .map(Session::getAnomalyScore)
-                .filter(score -> score != null)
-                .count()), 6, RoundingMode.HALF_UP))
-            .orElse(null);
-        BigDecimal anomalySessionRatio = totalSessionCount == 0
-            ? BigDecimal.ZERO
-            : BigDecimal.valueOf(anomalySessionCount)
-                .divide(BigDecimal.valueOf(totalSessionCount), 6, RoundingMode.HALF_UP);
+        BigDecimal averageAnomalyScore = averageScore(scoredSessions.stream().map(Session::getPercentileScore).toList());
 
         return traceLogMapper.toDashboardResponse(
-            traceLogMapper.toDashboardHeader(
-                averageAnomalyScore,
-                anomalySessionCount,
-                anomalySessionRatio,
-                anomalyIpCount,
-                detectionSetting == null ? "UNCONFIGURED" : "READY"
-            ),
+            new DashboardHeaderResponse(averageAnomalyScore, scoredSessions.size(), analyzedIpCount),
             trend,
-            anomalySessions,
-            topAnomalySessions
+            recentSessions,
+            topScoredSessions
         );
     }
 
@@ -117,9 +90,13 @@ public class SessionService {
         String ip,
         String sort
     ) {
+        boolean sortByScore = "score".equalsIgnoreCase(sort);
         Specification<Session> specification = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            if (sortByScore) {
+                predicates.add(criteriaBuilder.isNotNull(root.get("percentileScore")));
+            }
             if (startAt != null) {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("sessionStart"), startAt));
             }
@@ -136,20 +113,19 @@ public class SessionService {
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };
 
-        Sort requestSort = "score".equalsIgnoreCase(sort)
-            ? Sort.by(Sort.Order.desc("anomalyScore"), Sort.Order.desc("sessionStart"))
-            : Sort.by(Sort.Order.desc("sessionStart"));
+        Sort requestSort = sortByScore ? Sort.unsorted() : Sort.by(Sort.Order.desc("sessionStart"));
 
         List<Session> sessions = sessionRepository.findAll(specification, requestSort);
+        if (sortByScore) {
+            sessions = sessions.stream().sorted(SCORE_ORDER).toList();
+        }
         return traceLogMapper.toSessionListResponse(sessions.size(), sessions);
     }
 
     public SessionDetailResponse getSessionDetail(Long sessionId) {
         Session session = sessionRepository.findDetailById(sessionId)
             .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Session not found."));
-        DetectionSetting detectionSetting = detectionSettingRepository.findTopByOrderByAppliedAtDesc()
-            .orElse(null);
-        return traceLogMapper.toSessionDetail(session, detectionSetting);
+        return traceLogMapper.toSessionDetail(session);
     }
 
     public SessionLogDetailResponse getSessionLogDetail(Long sessionId, Integer page, Integer size) {
@@ -185,13 +161,16 @@ public class SessionService {
         );
     }
 
-    private boolean isAnomaly(Session session, BigDecimal threshold) {
-        return session.getAnomalyScore() != null && session.getAnomalyScore().compareTo(threshold) >= 0;
+    private BigDecimal averageScore(List<BigDecimal> scores) {
+        return scores.stream()
+            .reduce(BigDecimal::add)
+            .map(sum -> sum.divide(BigDecimal.valueOf(scores.size()), 6, RoundingMode.HALF_UP))
+            .orElse(null);
     }
 
     private List<AnomalyScoreTrendPointResponse> buildTrend(LocalDateTime now, DashboardRange range) {
         LocalDateTime startAt = now.minus(range.window());
-        List<Session> sessions = sessionRepository.findAllStartedAfterOrderBySessionStartAsc(startAt);
+        List<Session> sessions = sessionRepository.findScoredSessionsStartedAfter(startAt);
         List<AnomalyScoreTrendPointResponse> points = new ArrayList<>();
 
         LocalDateTime bucketStart = startAt;
@@ -202,20 +181,12 @@ public class SessionService {
             for (Session session : sessions) {
                 LocalDateTime sessionStart = session.getSessionStart();
                 if ((sessionStart.isEqual(bucketStart) || sessionStart.isAfter(bucketStart))
-                    && sessionStart.isBefore(bucketEnd)
-                    && session.getAnomalyScore() != null) {
-                    scores.add(session.getAnomalyScore());
+                    && sessionStart.isBefore(bucketEnd)) {
+                    scores.add(session.getPercentileScore());
                 }
             }
 
-            BigDecimal averageScore = scores.isEmpty()
-                ? null
-                : scores.stream()
-                    .reduce(BigDecimal::add)
-                    .map(sum -> sum.divide(BigDecimal.valueOf(scores.size()), 6, RoundingMode.HALF_UP))
-                    .orElse(null);
-
-            points.add(traceLogMapper.toTrendPoint(bucketStart, bucketEnd, averageScore));
+            points.add(traceLogMapper.toTrendPoint(bucketStart, bucketEnd, averageScore(scores)));
             bucketStart = bucketEnd;
         }
 
